@@ -105,3 +105,11 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Local resource box
+/[Aa]ssets/resourceBox/
+/[Aa]ssets/resourceBox.meta
+
+# Local Pixel Quest UI asset pack
+/[Aa]ssets/2D Pixel Quest Vol.3 - The UI-GUI/
+/[Aa]ssets/2D Pixel Quest Vol.3 - The UI-GUI.meta

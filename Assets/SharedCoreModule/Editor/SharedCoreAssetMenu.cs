@@ -7,7 +7,8 @@ namespace SharedCoreModule.Editor
 {
     public static class SharedCoreAssetMenu
     {
-        private const string ModuleRoot = "Assets/SharedCoreModule";
+        // Generated assets must live under Assets. Git/registry packages may be read-only.
+        private const string ModuleRoot = "Assets/SharedModules/Generated";
         private const string PrefabsFolder = ModuleRoot + "/Prefabs";
         private const string RootName = "Shared Core Root";
         private const string RootPrefabPath = PrefabsFolder + "/Shared Core Root.prefab";

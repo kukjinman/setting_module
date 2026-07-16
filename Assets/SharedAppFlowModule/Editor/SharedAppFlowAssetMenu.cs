@@ -10,14 +10,15 @@ namespace SharedAppFlowModule.Editor
 {
     public static class SharedAppFlowAssetMenu
     {
-        private const string ModuleRoot = "Assets/SharedAppFlowModule";
+        // Generated assets must live under Assets. Git/registry packages may be read-only.
+        private const string ModuleRoot = "Assets/SharedModules/Generated";
         private const string PrefabsFolder = ModuleRoot + "/Prefabs";
         private const string RootPrefabPath = PrefabsFolder + "/Shared App Flow Root.prefab";
         private const string RootName = "Shared App Flow Root";
         private const string CanvasName = "Shared App Flow Canvas";
         private const string PixelPanelPath = "Assets/2D Pixel Quest Vol.3 - The UI-GUI/Sprites PNG/Panels/Panels/F_UI_Panel_A.png";
         private const string PixelFontPath = "Assets/2D Pixel Quest Vol.3 - The UI-GUI/Font/Fantasypixelfont.ttf";
-        private const string IntroLogoPath = "Assets/SharedAppFlowModule/Art/Intro/intro-logo.png";
+        private const string IntroLogoGuid = "b140f2c6ca9534e6db981042d930d5ba";
 
         private static readonly Vector2 ReferenceResolution = new Vector2(960f, 540f);
 
@@ -528,14 +529,20 @@ namespace SharedAppFlowModule.Editor
 
         private static Sprite LoadIntroLogoSprite()
         {
-            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(IntroLogoPath);
+            string introLogoPath = AssetDatabase.GUIDToAssetPath(IntroLogoGuid);
+            if (string.IsNullOrEmpty(introLogoPath))
+            {
+                return null;
+            }
+
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(introLogoPath);
 
             if (sprite != null)
             {
                 return sprite;
             }
 
-            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(IntroLogoPath);
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(introLogoPath);
             foreach (UnityEngine.Object asset in assets)
             {
                 if (asset is Sprite loadedSprite)

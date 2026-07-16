@@ -1,0 +1,20 @@
+{
+  "name": "com.sharedmodules.setting-module",
+  "version": "1.0.0",
+  "displayName": "Shared Setting Module",
+  "description": "Reusable Unity core services, authentication, intro/login/home flow, and settings UI.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.ugui": "2.0.0",
+    "com.unity.inputsystem": "1.11.2"
+  },
+  "keywords": [
+    "settings",
+    "authentication",
+    "app-flow",
+    "game-center"
+  ],
+  "author": {
+    "name": "Shared Modules"
+  }
+}

@@ -10,7 +10,9 @@ namespace SharedAppFlowModule
         CloseSettings,
         ToggleSettings,
         LoginAsGuest,
-        Logout
+        Logout,
+        LoginWithGooglePlayGames,
+        LoginWithPlatform
     }
 
     [RequireComponent(typeof(Button))]
@@ -71,6 +73,12 @@ namespace SharedAppFlowModule
                     break;
                 case SharedAppFlowButtonAction.LoginAsGuest:
                     controller.LoginAsGuest();
+                    break;
+                case SharedAppFlowButtonAction.LoginWithGooglePlayGames:
+                    controller.LoginWithGooglePlayGames();
+                    break;
+                case SharedAppFlowButtonAction.LoginWithPlatform:
+                    controller.LoginWithPlatform();
                     break;
                 case SharedAppFlowButtonAction.Logout:
                     controller.Logout();

@@ -110,7 +110,7 @@ namespace SharedAppFlowModule
 
             if (controller != null)
             {
-                RouteToSavedDestination();
+                RouteToAuthenticatedDestination();
             }
 
             routeRoutine = null;
@@ -182,18 +182,15 @@ namespace SharedAppFlowModule
                 return;
             }
 
-            RouteToSavedDestination();
+            RouteToAuthenticatedDestination();
 
             routeRoutine = null;
         }
 
-        private void RouteToSavedDestination()
+        private void RouteToAuthenticatedDestination()
         {
-            bool hasSavedLogin = authManager != null
-                ? authManager.HasSavedLogin()
-                : SharedAuthManager.HasSavedLoginState();
-
-            controller.ShowScreen(hasSavedLogin ? SharedAppScreenId.Home : SharedAppScreenId.Login);
+            controller.TryRestoreLogin(authenticated =>
+                controller.ShowScreen(authenticated ? SharedAppScreenId.Home : SharedAppScreenId.Login));
         }
 
         private static bool IsSkipInputPressed()

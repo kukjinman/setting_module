@@ -21,7 +21,7 @@ namespace SharedAppFlowModule.Editor
 
         private static readonly Vector2 ReferenceResolution = new Vector2(960f, 540f);
 
-        [MenuItem("Tools/Shared Modules/App Flow/Setup Intro Login Home Demo")]
+        [MenuItem("Tools/Shared Modules/App Flow/Setup Intro Login Home Gameplay Demo")]
         public static void SetupIntroLoginHomeDemo()
         {
             EnsureFolders();
@@ -60,7 +60,7 @@ namespace SharedAppFlowModule.Editor
             {
                 EditorUtility.DisplayDialog(
                     "App Flow Root Missing",
-                    "Run Tools > Shared Modules > App Flow > Setup Intro Login Home Demo first.",
+                    "Run Tools > Shared Modules > App Flow > Setup Intro Login Home Gameplay Demo first.",
                     "OK");
                 return;
             }
@@ -85,6 +85,9 @@ namespace SharedAppFlowModule.Editor
             GameObject root = new GameObject(RootName);
             Undo.RegisterCreatedObjectUndo(root, "Create Shared App Flow Root");
             SharedAppFlowController controller = root.AddComponent<SharedAppFlowController>();
+            SharedAppleGameCenterLoginProvider appleGameCenterLogin = root.AddComponent<SharedAppleGameCenterLoginProvider>();
+            SharedGooglePlayGamesLoginProvider googlePlayGamesLogin = root.AddComponent<SharedGooglePlayGamesLoginProvider>();
+            controller.ConfigurePlatformLogins(appleGameCenterLogin, googlePlayGamesLogin);
 
             GameObject canvasObject = CreateUiObject(CanvasName, root.transform);
             Canvas canvas = canvasObject.AddComponent<Canvas>();
@@ -110,12 +113,39 @@ namespace SharedAppFlowModule.Editor
                 introLogoSprite,
                 font);
 
+            SharedAppScreenPanel loginPanel = CreateLoginPanel(canvasObject.transform, controller, panelSprite, font);
+
+            SharedAppScreenPanel homePanel = CreateHomePanel(canvasObject.transform, controller, panelSprite, font);
+            SharedAppScreenPanel gameplayPanel = CreateGameplayPanel(canvasObject.transform, controller, panelSprite, font);
+            SharedSettingsModal settingsModal = CreateSettingsModal(canvasObject.transform, panelSprite, font);
+
+            controller.Configure(
+                new[] { introPanel, loginPanel, homePanel, gameplayPanel },
+                settingsModal,
+                SharedAppScreenId.Intro);
+
+            introPanel.Show(true);
+            loginPanel.Hide(true);
+            homePanel.Hide(true);
+            gameplayPanel.Hide(true);
+            settingsModal.SetOpen(false, true);
+
+            EnsureEventSystem();
+            return root;
+        }
+
+        private static SharedAppScreenPanel CreateLoginPanel(
+            Transform parent,
+            SharedAppFlowController controller,
+            Sprite panelSprite,
+            Font font)
+        {
             SharedAppScreenPanel loginPanel = CreateScreenPanel(
-                canvasObject.transform,
+                parent,
                 SharedAppScreenId.Login,
                 "Login Panel",
                 "LOGIN",
-                "Guest login placeholder",
+                "Choose how you want to continue",
                 "GUEST LOGIN",
                 SharedAppFlowButtonAction.LoginAsGuest,
                 SharedAppScreenId.Home,
@@ -123,32 +153,46 @@ namespace SharedAppFlowModule.Editor
                 panelSprite,
                 font);
 
+            Transform content = loginPanel.transform.Find("Content");
+            RectTransform guestButton = content.Find("Primary Button").GetComponent<RectTransform>();
+            guestButton.anchoredPosition = new Vector2(0f, -50f);
+
             CreateButton(
-                "Back Button",
-                loginPanel.transform.Find("Content"),
-                new Vector2(-110f, -110f),
-                new Vector2(160f, 38f),
-                "BACK",
+                "Platform Login Button",
+                content,
+                new Vector2(0f, -105f),
+                new Vector2(240f, 42f),
+                GetPlatformLoginLabel(),
                 controller,
-                SharedAppFlowButtonAction.ShowScreen,
-                SharedAppScreenId.Intro,
+                SharedAppFlowButtonAction.LoginWithPlatform,
+                SharedAppScreenId.Home,
                 font);
 
-            SharedAppScreenPanel homePanel = CreateHomePanel(canvasObject.transform, controller, panelSprite, font);
-            SharedSettingsModal settingsModal = CreateSettingsModal(canvasObject.transform, panelSprite, font);
+            Text status = CreateText(
+                "Login Status",
+                content,
+                new Vector2(0f, -145f),
+                new Vector2(420f, 28f),
+                string.Empty,
+                12,
+                font,
+                FontStyle.Normal);
+            SharedLoginStatusText statusText = status.gameObject.AddComponent<SharedLoginStatusText>();
+            statusText.Configure(controller);
+            return loginPanel;
+        }
 
-            controller.Configure(
-                new[] { introPanel, loginPanel, homePanel },
-                settingsModal,
-                SharedAppScreenId.Intro);
-
-            introPanel.Show(true);
-            loginPanel.Hide(true);
-            homePanel.Hide(true);
-            settingsModal.SetOpen(false, true);
-
-            EnsureEventSystem();
-            return root;
+        private static string GetPlatformLoginLabel()
+        {
+            switch (EditorUserBuildSettings.activeBuildTarget)
+            {
+                case BuildTarget.iOS:
+                    return "APPLE GAME CENTER";
+                case BuildTarget.Android:
+                    return "GOOGLE PLAY GAMES";
+                default:
+                    return "PLATFORM LOGIN";
+            }
         }
 
         private static SharedAppScreenPanel CreateHomePanel(
@@ -165,17 +209,18 @@ namespace SharedAppFlowModule.Editor
                 "Main hub placeholder",
                 "PLAY",
                 SharedAppFlowButtonAction.ShowScreen,
-                SharedAppScreenId.Home,
+                SharedAppScreenId.Gameplay,
                 controller,
                 panelSprite,
                 font);
 
             Transform content = homePanel.transform.Find("Content");
+            content.Find("Primary Button").GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -48f);
 
             CreateButton(
                 "Settings Button",
                 content,
-                new Vector2(0f, -110f),
+                new Vector2(-90f, -110f),
                 new Vector2(160f, 38f),
                 "SETTINGS",
                 controller,
@@ -195,6 +240,26 @@ namespace SharedAppFlowModule.Editor
                 font);
 
             return homePanel;
+        }
+
+        private static SharedAppScreenPanel CreateGameplayPanel(
+            Transform parent,
+            SharedAppFlowController controller,
+            Sprite panelSprite,
+            Font font)
+        {
+            return CreateScreenPanel(
+                parent,
+                SharedAppScreenId.Gameplay,
+                "Gameplay Panel",
+                "GAMEPLAY",
+                "Gameplay scene entry placeholder",
+                "BACK TO HOME",
+                SharedAppFlowButtonAction.ShowScreen,
+                SharedAppScreenId.Home,
+                controller,
+                panelSprite,
+                font);
         }
 
         private static SharedAppScreenPanel CreateIntroPanel(

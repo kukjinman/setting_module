@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using SharedCoreModule;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
@@ -15,7 +14,6 @@ namespace SharedAppFlowModule
         [SerializeField] private SharedAuthManager authManager;
         [SerializeField] private KeyCode settingsToggleKey = KeyCode.Escape;
 
-        private readonly Dictionary<SharedAppScreenId, SharedAppScreenPanel> panelMap = new Dictionary<SharedAppScreenId, SharedAppScreenPanel>();
         private SharedAppScreenId currentScreen;
 
         public SharedAppScreenId CurrentScreen => currentScreen;
@@ -27,12 +25,6 @@ namespace SharedAppFlowModule
             panels = screenPanels;
             settingsModal = modal;
             startScreen = initialScreen;
-            BuildPanelMap();
-        }
-
-        private void Awake()
-        {
-            BuildPanelMap();
         }
 
         private void Start()
@@ -81,8 +73,12 @@ namespace SharedAppFlowModule
 
         public void ShowScreen(SharedAppScreenId screenId, bool instant)
         {
-            BuildPanelMap();
             currentScreen = screenId;
+
+            if (panels == null)
+            {
+                return;
+            }
 
             foreach (SharedAppScreenPanel panel in panels)
             {
@@ -136,9 +132,7 @@ namespace SharedAppFlowModule
             }
             else
             {
-                PlayerPrefs.SetInt("shared_auth_logged_in", 1);
-                PlayerPrefs.SetString("shared_auth_login_type", "guest");
-                PlayerPrefs.Save();
+                SharedAuthManager.SaveGuestLogin();
             }
 
             ShowHome();
@@ -154,9 +148,7 @@ namespace SharedAppFlowModule
             }
             else
             {
-                PlayerPrefs.DeleteKey("shared_auth_logged_in");
-                PlayerPrefs.DeleteKey("shared_auth_login_type");
-                PlayerPrefs.Save();
+                SharedAuthManager.ClearSavedLogin();
             }
 
             ShowLogin();
@@ -196,24 +188,6 @@ namespace SharedAppFlowModule
 #else
             return false;
 #endif
-        }
-
-        private void BuildPanelMap()
-        {
-            panelMap.Clear();
-
-            if (panels == null)
-            {
-                return;
-            }
-
-            foreach (SharedAppScreenPanel panel in panels)
-            {
-                if (panel != null)
-                {
-                    panelMap[panel.ScreenId] = panel;
-                }
-            }
         }
     }
 }

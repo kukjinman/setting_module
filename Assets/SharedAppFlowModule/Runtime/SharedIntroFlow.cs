@@ -75,6 +75,12 @@ namespace SharedAppFlowModule
             }
 
             yield return WaitForSlideUp();
+
+            if (routeRoutine == null)
+            {
+                yield break;
+            }
+
             yield return WaitWithSkip(holdAfterSlideSeconds);
 
             if (routeRoutine == null)
@@ -84,17 +90,13 @@ namespace SharedAppFlowModule
 
             ResolveControllerAndAuth();
 
-            bool hasSavedLogin = authManager != null
-                ? authManager.HasSavedLogin()
-                : PlayerPrefs.GetInt("shared_auth_logged_in", 0) == 1;
-
             if (logoBreakEffect != null)
             {
                 yield return logoBreakEffect.Play(() => skipOnPointerPress && IsSkipInputPressed());
 
                 if (logoBreakEffect.WasSkipped)
                 {
-                    RouteToHomeNow();
+                    RouteNow();
                     yield break;
                 }
             }
@@ -108,7 +110,7 @@ namespace SharedAppFlowModule
 
             if (controller != null)
             {
-                controller.ShowScreen(hasSavedLogin ? SharedAppScreenId.Home : SharedAppScreenId.Login);
+                RouteToSavedDestination();
             }
 
             routeRoutine = null;
@@ -126,7 +128,7 @@ namespace SharedAppFlowModule
             {
                 if (skipOnPointerPress && IsSkipInputPressed())
                 {
-                    RouteToHomeNow();
+                    RouteNow();
                     yield break;
                 }
 
@@ -143,7 +145,7 @@ namespace SharedAppFlowModule
             {
                 if (skipOnPointerPress && IsSkipInputPressed())
                 {
-                    RouteToHomeNow();
+                    RouteNow();
                     yield break;
                 }
 
@@ -170,19 +172,28 @@ namespace SharedAppFlowModule
             }
         }
 
-        private void RouteToHomeNow()
+        private void RouteNow()
         {
+            ResolveControllerAndAuth();
+
             if (controller == null)
             {
-                controller = GetComponentInParent<SharedAppFlowController>();
+                routeRoutine = null;
+                return;
             }
 
-            if (controller != null)
-            {
-                controller.ShowHome();
-            }
+            RouteToSavedDestination();
 
             routeRoutine = null;
+        }
+
+        private void RouteToSavedDestination()
+        {
+            bool hasSavedLogin = authManager != null
+                ? authManager.HasSavedLogin()
+                : SharedAuthManager.HasSavedLoginState();
+
+            controller.ShowScreen(hasSavedLogin ? SharedAppScreenId.Home : SharedAppScreenId.Login);
         }
 
         private static bool IsSkipInputPressed()

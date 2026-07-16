@@ -57,6 +57,7 @@ namespace SharedAppFlowModule
             if (transitionRoutine != null)
             {
                 StopCoroutine(transitionRoutine);
+                transitionRoutine = null;
             }
 
             if (instant || !gameObject.activeInHierarchy)
@@ -81,6 +82,7 @@ namespace SharedAppFlowModule
             if (transitionRoutine != null)
             {
                 StopCoroutine(transitionRoutine);
+                transitionRoutine = null;
             }
 
             if (instant || !gameObject.activeInHierarchy)
@@ -122,7 +124,7 @@ namespace SharedAppFlowModule
 
         private IEnumerator Animate(bool visible)
         {
-            float from = visible ? 0f : 1f;
+            float from = canvasGroup != null ? canvasGroup.alpha : (visible ? 0f : 1f);
             float to = visible ? 1f : 0f;
             float elapsed = 0f;
             float duration = Mathf.Max(0.01f, transitionDuration);

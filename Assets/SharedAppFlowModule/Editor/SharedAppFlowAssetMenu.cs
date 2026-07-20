@@ -218,6 +218,21 @@ namespace SharedAppFlowModule.Editor
             Transform content = homePanel.transform.Find("Content");
             content.Find("Primary Button").GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -48f);
 
+            Button platformAccessButton = CreateButton(
+                "Platform Access Button",
+                content,
+                new Vector2(-220f, 130f),
+                new Vector2(52f, 42f),
+                GetPlatformIconLabel(),
+                controller,
+                SharedAppFlowButtonAction.LoginWithPlatform,
+                SharedAppScreenId.Home,
+                font);
+
+            SharedPlatformAccessButtonVisibility platformButtonVisibility =
+                homePanel.gameObject.AddComponent<SharedPlatformAccessButtonVisibility>();
+            platformButtonVisibility.Configure(platformAccessButton, 5f);
+
             CreateButton(
                 "Settings Button",
                 content,
@@ -241,6 +256,19 @@ namespace SharedAppFlowModule.Editor
                 font);
 
             return homePanel;
+        }
+
+        private static string GetPlatformIconLabel()
+        {
+            switch (EditorUserBuildSettings.activeBuildTarget)
+            {
+                case BuildTarget.iOS:
+                    return "GC";
+                case BuildTarget.Android:
+                    return "PG";
+                default:
+                    return "GC";
+            }
         }
 
         private static SharedAppScreenPanel CreateGameplayPanel(

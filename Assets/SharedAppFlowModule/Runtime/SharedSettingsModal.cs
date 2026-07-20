@@ -280,7 +280,17 @@ namespace SharedAppFlowModule
 
         private static void SetVibrationEnabled(bool enabled)
         {
-            ResolveHapticsManager()?.SetEnabled(enabled);
+            SharedHapticsManager haptics = ResolveHapticsManager();
+            if (haptics == null)
+            {
+                return;
+            }
+
+            haptics.SetEnabled(enabled);
+            if (enabled)
+            {
+                haptics.Play(SharedHapticType.Selection);
+            }
         }
 
         private static SharedAudioManager ResolveAudioManager()

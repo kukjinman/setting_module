@@ -204,15 +204,23 @@ public sealed class GameAudioExample : MonoBehaviour
 
 `PlayBgm`은 BGM Source에서 반복 재생되며 `MUSIC VOLUME`의 영향을 받습니다. `PlaySfx`는 SFX Source에서 한 번 재생되며 `SOUND EFFECTS`의 영향을 받습니다. 두 종류 모두 `MASTER VOLUME`이 함께 적용됩니다.
 
-게임 효과가 발생하는 지점에서 다음과 같이 기본 진동을 요청할 수 있습니다.
+게임 효과의 의미와 강도에 맞는 네이티브 햅틱을 요청할 수 있습니다.
 
 ```csharp
 using SharedCoreModule;
 
-SharedCoreRoot.Instance.Haptics.Vibrate();
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Selection); // 메뉴 또는 카드 선택
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Light);     // 가벼운 터치
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Medium);    // 카드 확정
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Heavy);     // 강한 충돌 또는 큰 점수
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Success);   // 승리 또는 보상
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Warning);   // 경고
+SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Error);     // 실패
 ```
 
-예를 들어 충돌, 카드 확정, 강한 공격 또는 보상 획득 시 호출합니다. Settings의 `VIBRATION`이 OFF이면 `Vibrate()`를 호출해도 진동하지 않습니다. 설정값은 `PlayerPrefs`에 저장되며 다음 실행 때 복원됩니다. 기본 구현은 iOS와 Android 실기기에서 `Handheld.Vibrate()`를 사용하고 Unity Editor에서는 아무 동작도 하지 않습니다.
+기존 `Vibrate()`는 호환성을 위해 유지되며 `Heavy` 햅틱을 호출합니다. Settings의 `VIBRATION`이 OFF이면 모든 햅틱 요청이 무시됩니다. 설정값은 `PlayerPrefs`에 저장되며 다음 실행 때 복원됩니다.
+
+iOS는 `UISelectionFeedbackGenerator`, `UIImpactFeedbackGenerator`, `UINotificationFeedbackGenerator`를 타입에 맞게 사용합니다. Android는 시스템 `performHapticFeedback` 상수를 사용하며 Android 11(API 30) 이상에서는 Success와 Error를 각각 `CONFIRM`, `REJECT`로 구분합니다. 구형 Android에서는 지원되는 Click 또는 Long Press 피드백으로 대체됩니다. Android의 시스템 햅틱 설정과 기기별 하드웨어 특성을 따르며 Unity Editor에서는 아무 동작도 하지 않습니다.
 
 패키지를 업데이트하기 전에 이미 App Flow 프리팹을 생성했다면 새 버튼이 기존 로컬 프리팹에 자동 추가되지 않습니다. 커스텀 UI 수정 사항을 보관한 후 Setup을 다시 실행하여 프리팹을 재생성하거나, 기존 Home Panel에 `SharedAppFlowButton`을 직접 추가하고 Action을 `LoginWithPlatform`으로 설정합니다.
 

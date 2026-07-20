@@ -8,7 +8,7 @@ First version includes only the pieces that are useful almost immediately:
 - `SharedSaveManager`: small `PlayerPrefs` wrapper for simple values.
 - `SharedAudioManager`: BGM/SFX playback and saved volume settings.
 - `SharedAuthManager`: minimal saved-login state for guest login flow.
-- `SharedHapticsManager`: saved vibration preference and mobile vibration entry point.
+- `SharedHapticsManager`: saved vibration preference and native Selection/Impact/Notification haptics for iOS and Android.
 
 Use `Tools > Shared Modules > Core > Setup Core Root` to create the root in the current scene and save `Prefabs/Shared Core Root.prefab`.
 

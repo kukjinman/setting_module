@@ -76,6 +76,7 @@ namespace SharedCoreModule.Editor
             SharedCoreRoot coreRoot = root.AddComponent<SharedCoreRoot>();
             root.AddComponent<SharedSaveManager>();
             root.AddComponent<SharedAuthManager>();
+            root.AddComponent<SharedHapticsManager>();
             SharedAudioManager audioManager = root.AddComponent<SharedAudioManager>();
             audioManager.ConfigureSources(
                 CreateAudioSource(root.transform, "BGM Source", true),

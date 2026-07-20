@@ -10,12 +10,14 @@ namespace SharedCoreModule
         [SerializeField] private SharedSaveManager saveManager;
         [SerializeField] private SharedAudioManager audioManager;
         [SerializeField] private SharedAuthManager authManager;
+        [SerializeField] private SharedHapticsManager hapticsManager;
 
         public static SharedCoreRoot Instance { get; private set; }
 
         public SharedSaveManager Save => saveManager;
         public SharedAudioManager Audio => audioManager;
         public SharedAuthManager Auth => authManager;
+        public SharedHapticsManager Haptics => hapticsManager;
 
         private void Awake()
         {
@@ -64,6 +66,11 @@ namespace SharedCoreModule
                 authManager = GetComponentInChildren<SharedAuthManager>(true);
             }
 
+            if (hapticsManager == null)
+            {
+                hapticsManager = GetComponentInChildren<SharedHapticsManager>(true);
+            }
+
             if (saveManager == null)
             {
                 saveManager = gameObject.AddComponent<SharedSaveManager>();
@@ -77,6 +84,11 @@ namespace SharedCoreModule
             if (authManager == null)
             {
                 authManager = gameObject.AddComponent<SharedAuthManager>();
+            }
+
+            if (hapticsManager == null)
+            {
+                hapticsManager = gameObject.AddComponent<SharedHapticsManager>();
             }
         }
     }

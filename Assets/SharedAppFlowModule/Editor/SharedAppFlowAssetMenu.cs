@@ -234,11 +234,11 @@ namespace SharedAppFlowModule.Editor
             platformButtonVisibility.Configure(platformAccessButton, 5f);
 
             CreateButton(
-                "Settings Button",
+                "Options Button",
                 content,
                 new Vector2(-90f, -110f),
                 new Vector2(160f, 38f),
-                "SETTINGS",
+                "OPTIONS",
                 controller,
                 SharedAppFlowButtonAction.OpenSettings,
                 SharedAppScreenId.Home,
@@ -385,7 +385,7 @@ namespace SharedAppFlowModule.Editor
 
         private static SharedSettingsModal CreateSettingsModal(Transform parent, Sprite panelSprite, Font font)
         {
-            GameObject modalObject = CreateUiObject("Shared Settings Modal", parent);
+            GameObject modalObject = CreateUiObject("Shared Options Modal", parent);
             Stretch(modalObject.GetComponent<RectTransform>());
 
             CanvasGroup canvasGroup = modalObject.AddComponent<CanvasGroup>();
@@ -396,30 +396,137 @@ namespace SharedAppFlowModule.Editor
             Image dim = CreateFullImage("Dim Overlay", modalObject.transform, new Color(0.5f, 0.5f, 0.5f, 0.5f));
             dim.raycastTarget = true;
 
-            GameObject panelObject = CreateUiObject("Settings Panel", modalObject.transform);
+            GameObject panelObject = CreateUiObject("Options Panel", modalObject.transform);
             RectTransform panelRect = panelObject.GetComponent<RectTransform>();
-            Center(panelRect, new Vector2(460f, 300f), Vector2.zero);
+            Center(panelRect, new Vector2(360f, 330f), Vector2.zero);
 
             Image panelImage = panelObject.AddComponent<Image>();
             ApplyPanelSprite(panelImage, panelSprite, Color.white);
 
-            CreateText("Title", panelObject.transform, new Vector2(0f, 100f), new Vector2(360f, 44f), "SETTINGS", 24, font, FontStyle.Bold);
-            CreateText("Body", panelObject.transform, new Vector2(0f, 20f), new Vector2(360f, 90f), "Settings module placeholder", 15, font, FontStyle.Normal);
+            GameObject optionsPage = CreateModalPage("Options Menu", panelObject.transform);
+            CreateText("Title", optionsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "OPTIONS", 24, font, FontStyle.Bold);
 
+            Button settingsButton = CreateButton(
+                "Settings Button", optionsPage.transform, new Vector2(0f, 65f), new Vector2(250f, 38f),
+                "SETTINGS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+            Button statsButton = CreateButton(
+                "Stats Button", optionsPage.transform, new Vector2(0f, 20f), new Vector2(250f, 38f),
+                "STATS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+            Button creditsButton = CreateButton(
+                "Credits Button", optionsPage.transform, new Vector2(0f, -25f), new Vector2(250f, 38f),
+                "CREDITS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
             Button closeButton = CreateButton(
-                "Close Button",
-                panelObject.transform,
-                new Vector2(190f, 110f),
-                new Vector2(38f, 32f),
-                "X",
-                null,
-                SharedAppFlowButtonAction.CloseSettings,
-                SharedAppScreenId.Home,
-                font);
+                "Back Button", optionsPage.transform, new Vector2(0f, -80f), new Vector2(270f, 38f),
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+            ColorBlock backColors = closeButton.colors;
+            backColors.normalColor = new Color(0.9f, 0.45f, 0.05f, 1f);
+            backColors.highlightedColor = new Color(1f, 0.58f, 0.08f, 1f);
+            backColors.pressedColor = new Color(0.72f, 0.32f, 0.03f, 1f);
+            backColors.selectedColor = backColors.highlightedColor;
+            closeButton.colors = backColors;
+
+            GameObject settingsPage = CreateModalPage("Settings Page", panelObject.transform);
+            CreateText("Title", settingsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "SETTINGS", 24, font, FontStyle.Bold);
+            Slider masterSlider = CreateVolumeSlider("Master Volume", settingsPage.transform, new Vector2(55f, 65f), font);
+            Slider bgmSlider = CreateVolumeSlider("Music Volume", settingsPage.transform, new Vector2(55f, 15f), font);
+            Slider sfxSlider = CreateVolumeSlider("Sound Effects", settingsPage.transform, new Vector2(55f, -35f), font);
+            Toggle vibrationToggle = CreateSettingsToggle("Vibration", settingsPage.transform, new Vector2(55f, -75f), font);
+            Button settingsBackButton = CreateButton(
+                "Back Button", settingsPage.transform, new Vector2(0f, -130f), new Vector2(270f, 34f),
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+
+            GameObject statsPage = CreateModalPage("Stats Page", panelObject.transform);
+            CreateText("Title", statsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "STATS", 24, font, FontStyle.Bold);
+            CreateText("Body", statsPage.transform, new Vector2(0f, 25f), new Vector2(290f, 120f),
+                "Games Played    0\nBest Score      0\nWins            0", 16, font, FontStyle.Normal);
+            Button statsBackButton = CreateButton(
+                "Back Button", statsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+
+            GameObject creditsPage = CreateModalPage("Credits Page", panelObject.transform);
+            CreateText("Title", creditsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "CREDITS", 24, font, FontStyle.Bold);
+            CreateText("Body", creditsPage.transform, new Vector2(0f, 25f), new Vector2(290f, 120f),
+                "GAME BY YOUR STUDIO\n\nPowered by Shared Modules", 16, font, FontStyle.Normal);
+            Button creditsBackButton = CreateButton(
+                "Back Button", creditsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+
+            optionsPage.SetActive(true);
+            settingsPage.SetActive(false);
+            statsPage.SetActive(false);
+            creditsPage.SetActive(false);
 
             SharedSettingsModal modal = modalObject.AddComponent<SharedSettingsModal>();
-            modal.Configure(panelRect, closeButton);
+            modal.Configure(
+                panelRect, optionsPage, settingsPage, statsPage, creditsPage,
+                settingsButton, statsButton, creditsButton, closeButton,
+                settingsBackButton, statsBackButton, creditsBackButton,
+                masterSlider, bgmSlider, sfxSlider, vibrationToggle);
             return modal;
+        }
+
+        private static GameObject CreateModalPage(string name, Transform parent)
+        {
+            GameObject page = CreateUiObject(name, parent);
+            Stretch(page.GetComponent<RectTransform>());
+            return page;
+        }
+
+        private static Slider CreateVolumeSlider(string name, Transform parent, Vector2 position, Font font)
+        {
+            CreateText(name + " Label", parent, new Vector2(-105f, position.y), new Vector2(115f, 30f),
+                name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+
+            GameObject sliderObject = CreateUiObject(name + " Slider", parent);
+            RectTransform sliderRect = sliderObject.GetComponent<RectTransform>();
+            Center(sliderRect, new Vector2(180f, 22f), position);
+
+            Image background = sliderObject.AddComponent<Image>();
+            background.color = new Color(0.06f, 0.08f, 0.1f, 1f);
+
+            GameObject fillObject = CreateUiObject("Fill", sliderObject.transform);
+            RectTransform fillRect = fillObject.GetComponent<RectTransform>();
+            Stretch(fillRect);
+            fillRect.offsetMin = new Vector2(4f, 4f);
+            fillRect.offsetMax = new Vector2(-4f, -4f);
+            Image fillImage = fillObject.AddComponent<Image>();
+            fillImage.color = new Color(0.95f, 0.35f, 0.22f, 1f);
+
+            Slider slider = sliderObject.AddComponent<Slider>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.value = 1f;
+            slider.fillRect = fillRect;
+            slider.direction = Slider.Direction.LeftToRight;
+            return slider;
+        }
+
+        private static Toggle CreateSettingsToggle(string name, Transform parent, Vector2 position, Font font)
+        {
+            CreateText(name + " Label", parent, new Vector2(-105f, position.y), new Vector2(115f, 30f),
+                name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+
+            GameObject toggleObject = CreateUiObject(name + " Toggle", parent);
+            RectTransform toggleRect = toggleObject.GetComponent<RectTransform>();
+            Center(toggleRect, new Vector2(180f, 28f), position);
+
+            GameObject backgroundObject = CreateUiObject("Background", toggleObject.transform);
+            RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
+            Center(backgroundRect, new Vector2(62f, 24f), Vector2.zero);
+            Image background = backgroundObject.AddComponent<Image>();
+            background.color = new Color(0.06f, 0.08f, 0.1f, 1f);
+
+            GameObject checkmarkObject = CreateUiObject("On", backgroundObject.transform);
+            RectTransform checkmarkRect = checkmarkObject.GetComponent<RectTransform>();
+            Center(checkmarkRect, new Vector2(52f, 14f), Vector2.zero);
+            Image checkmark = checkmarkObject.AddComponent<Image>();
+            checkmark.color = new Color(0.95f, 0.35f, 0.22f, 1f);
+
+            Toggle toggle = toggleObject.AddComponent<Toggle>();
+            toggle.targetGraphic = background;
+            toggle.graphic = checkmark;
+            toggle.isOn = true;
+            return toggle;
         }
 
         private static Button CreateButton(
@@ -431,7 +538,8 @@ namespace SharedAppFlowModule.Editor
             SharedAppFlowController controller,
             SharedAppFlowButtonAction action,
             SharedAppScreenId target,
-            Font font)
+            Font font,
+            bool addFlowButton = true)
         {
             GameObject buttonObject = CreateUiObject(name, parent);
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
@@ -448,8 +556,11 @@ namespace SharedAppFlowModule.Editor
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
 
-            SharedAppFlowButton flowButton = buttonObject.AddComponent<SharedAppFlowButton>();
-            flowButton.Configure(controller, action, target);
+            if (addFlowButton)
+            {
+                SharedAppFlowButton flowButton = buttonObject.AddComponent<SharedAppFlowButton>();
+                flowButton.Configure(controller, action, target);
+            }
 
             CreateText("Label", buttonObject.transform, Vector2.zero, size, label, 15, font, FontStyle.Bold);
             return button;

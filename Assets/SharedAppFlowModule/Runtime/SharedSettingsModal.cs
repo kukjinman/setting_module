@@ -1,4 +1,5 @@
 using System.Collections;
+using SharedCoreModule;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,21 @@ namespace SharedAppFlowModule
     public sealed class SharedSettingsModal : MonoBehaviour
     {
         [SerializeField] private RectTransform panelRoot;
+        [SerializeField] private GameObject optionsPage;
+        [SerializeField] private GameObject settingsPage;
+        [SerializeField] private GameObject statsPage;
+        [SerializeField] private GameObject creditsPage;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private Button statsButton;
+        [SerializeField] private Button creditsButton;
         [SerializeField] private Button closeButton;
+        [SerializeField] private Button settingsBackButton;
+        [SerializeField] private Button statsBackButton;
+        [SerializeField] private Button creditsBackButton;
+        [SerializeField] private Slider masterVolumeSlider;
+        [SerializeField] private Slider bgmVolumeSlider;
+        [SerializeField] private Slider sfxVolumeSlider;
+        [SerializeField] private Toggle vibrationToggle;
         [SerializeField] private float transitionDuration = 0.22f;
         [SerializeField] private Vector2 hiddenOffset = new Vector2(0f, -420f);
 
@@ -20,34 +35,57 @@ namespace SharedAppFlowModule
 
         public bool IsOpen => isOpen;
 
-        public void Configure(RectTransform panel, Button close)
+        public void Configure(
+            RectTransform panel,
+            GameObject menu,
+            GameObject settings,
+            GameObject stats,
+            GameObject credits,
+            Button openSettings,
+            Button openStats,
+            Button openCredits,
+            Button close,
+            Button settingsBack,
+            Button statsBack,
+            Button creditsBack,
+            Slider masterSlider,
+            Slider bgmSlider,
+            Slider sfxSlider,
+            Toggle hapticsToggle)
         {
             panelRoot = panel;
+            optionsPage = menu;
+            settingsPage = settings;
+            statsPage = stats;
+            creditsPage = credits;
+            settingsButton = openSettings;
+            statsButton = openStats;
+            creditsButton = openCredits;
             closeButton = close;
+            settingsBackButton = settingsBack;
+            statsBackButton = statsBack;
+            creditsBackButton = creditsBack;
+            masterVolumeSlider = masterSlider;
+            bgmVolumeSlider = bgmSlider;
+            sfxVolumeSlider = sfxSlider;
+            vibrationToggle = hapticsToggle;
             initialized = false;
         }
 
         private void Awake()
         {
             Initialize();
-
-            if (closeButton != null)
-            {
-                closeButton.onClick.RemoveListener(Close);
-                closeButton.onClick.AddListener(Close);
-            }
+            BindListeners();
         }
 
         private void OnDestroy()
         {
-            if (closeButton != null)
-            {
-                closeButton.onClick.RemoveListener(Close);
-            }
+            UnbindListeners();
         }
 
         public void Open()
         {
+            ShowOptionsMenu();
             SetOpen(true, false);
         }
 
@@ -58,7 +96,34 @@ namespace SharedAppFlowModule
 
         public void Toggle()
         {
-            SetOpen(!isOpen, false);
+            if (isOpen)
+            {
+                Close();
+                return;
+            }
+
+            Open();
+        }
+
+        public void ShowOptionsMenu()
+        {
+            SetPage(optionsPage);
+        }
+
+        public void ShowSettings()
+        {
+            SetPage(settingsPage);
+            RefreshSettingsControls();
+        }
+
+        public void ShowStats()
+        {
+            SetPage(statsPage);
+        }
+
+        public void ShowCredits()
+        {
+            SetPage(creditsPage);
         }
 
         public void SetOpen(bool open, bool instant)
@@ -100,6 +165,157 @@ namespace SharedAppFlowModule
             {
                 shownPosition = panelRoot != null ? panelRoot.anchoredPosition : Vector2.zero;
                 initialized = true;
+            }
+        }
+
+        private void BindListeners()
+        {
+            AddButtonListener(settingsButton, ShowSettings);
+            AddButtonListener(statsButton, ShowStats);
+            AddButtonListener(creditsButton, ShowCredits);
+            AddButtonListener(closeButton, Close);
+            AddButtonListener(settingsBackButton, ShowOptionsMenu);
+            AddButtonListener(statsBackButton, ShowOptionsMenu);
+            AddButtonListener(creditsBackButton, ShowOptionsMenu);
+
+            if (masterVolumeSlider != null)
+            {
+                masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
+            }
+
+            if (bgmVolumeSlider != null)
+            {
+                bgmVolumeSlider.onValueChanged.AddListener(SetBgmVolume);
+            }
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.onValueChanged.AddListener(SetSfxVolume);
+            }
+
+            if (vibrationToggle != null)
+            {
+                vibrationToggle.onValueChanged.AddListener(SetVibrationEnabled);
+            }
+        }
+
+        private void UnbindListeners()
+        {
+            RemoveButtonListener(settingsButton, ShowSettings);
+            RemoveButtonListener(statsButton, ShowStats);
+            RemoveButtonListener(creditsButton, ShowCredits);
+            RemoveButtonListener(closeButton, Close);
+            RemoveButtonListener(settingsBackButton, ShowOptionsMenu);
+            RemoveButtonListener(statsBackButton, ShowOptionsMenu);
+            RemoveButtonListener(creditsBackButton, ShowOptionsMenu);
+
+            if (masterVolumeSlider != null)
+            {
+                masterVolumeSlider.onValueChanged.RemoveListener(SetMasterVolume);
+            }
+
+            if (bgmVolumeSlider != null)
+            {
+                bgmVolumeSlider.onValueChanged.RemoveListener(SetBgmVolume);
+            }
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.onValueChanged.RemoveListener(SetSfxVolume);
+            }
+
+            if (vibrationToggle != null)
+            {
+                vibrationToggle.onValueChanged.RemoveListener(SetVibrationEnabled);
+            }
+        }
+
+        private void SetPage(GameObject activePage)
+        {
+            SetPageActive(optionsPage, activePage);
+            SetPageActive(settingsPage, activePage);
+            SetPageActive(statsPage, activePage);
+            SetPageActive(creditsPage, activePage);
+        }
+
+        private static void SetPageActive(GameObject page, GameObject activePage)
+        {
+            if (page != null)
+            {
+                page.SetActive(page == activePage);
+            }
+        }
+
+        private void RefreshSettingsControls()
+        {
+            SharedAudioManager audio = ResolveAudioManager();
+            if (audio != null)
+            {
+                masterVolumeSlider?.SetValueWithoutNotify(audio.MasterVolume);
+                bgmVolumeSlider?.SetValueWithoutNotify(audio.BgmVolume);
+                sfxVolumeSlider?.SetValueWithoutNotify(audio.SfxVolume);
+            }
+
+            SharedHapticsManager haptics = ResolveHapticsManager();
+            if (haptics != null)
+            {
+                vibrationToggle?.SetIsOnWithoutNotify(haptics.IsEnabled);
+            }
+        }
+
+        private static void SetMasterVolume(float value)
+        {
+            ResolveAudioManager()?.SetMasterVolume(value);
+        }
+
+        private static void SetBgmVolume(float value)
+        {
+            ResolveAudioManager()?.SetBgmVolume(value);
+        }
+
+        private static void SetSfxVolume(float value)
+        {
+            ResolveAudioManager()?.SetSfxVolume(value);
+        }
+
+        private static void SetVibrationEnabled(bool enabled)
+        {
+            ResolveHapticsManager()?.SetEnabled(enabled);
+        }
+
+        private static SharedAudioManager ResolveAudioManager()
+        {
+            if (SharedCoreRoot.Instance != null)
+            {
+                return SharedCoreRoot.Instance.Audio;
+            }
+
+            return Object.FindFirstObjectByType<SharedAudioManager>();
+        }
+
+        private static SharedHapticsManager ResolveHapticsManager()
+        {
+            if (SharedCoreRoot.Instance != null)
+            {
+                return SharedCoreRoot.Instance.Haptics;
+            }
+
+            return Object.FindFirstObjectByType<SharedHapticsManager>();
+        }
+
+        private static void AddButtonListener(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button != null)
+            {
+                button.onClick.AddListener(action);
+            }
+        }
+
+        private static void RemoveButtonListener(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button != null)
+            {
+                button.onClick.RemoveListener(action);
             }
         }
 

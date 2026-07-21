@@ -26,10 +26,16 @@ namespace SharedAppFlowModule
         [SerializeField] private Toggle vibrationToggle;
         [SerializeField] private float transitionDuration = 0.22f;
         [SerializeField] private Vector2 hiddenOffset = new Vector2(0f, -420f);
+        [Header("Backdrop")]
+        [SerializeField] private bool blurBackdrop = true;
+        [SerializeField, Range(2, 16)] private int blurDownsample = 8;
 
         private CanvasGroup canvasGroup;
+        private RawImage blurredBackdrop;
+        private Texture2D blurredBackdropTexture;
         private Vector2 shownPosition;
         private Coroutine transitionRoutine;
+        private Coroutine pageTransitionRoutine;
         private bool isOpen;
         private bool initialized;
 
@@ -81,6 +87,7 @@ namespace SharedAppFlowModule
         private void OnDestroy()
         {
             UnbindListeners();
+            ReleaseBackdropTexture();
         }
 
         public void Open()
@@ -91,7 +98,7 @@ namespace SharedAppFlowModule
 
         public void Close()
         {
-            SetOpen(false, false);
+            SetOpen(false, true);
         }
 
         public void Toggle()
@@ -112,18 +119,18 @@ namespace SharedAppFlowModule
 
         public void ShowSettings()
         {
-            SetPage(settingsPage);
+            ShowPageWithSlide(settingsPage);
             RefreshSettingsControls();
         }
 
         public void ShowStats()
         {
-            SetPage(statsPage);
+            ShowPageWithSlide(statsPage);
         }
 
         public void ShowCredits()
         {
-            SetPage(creditsPage);
+            ShowPageWithSlide(creditsPage);
         }
 
         public void SetOpen(bool open, bool instant)
@@ -146,7 +153,92 @@ namespace SharedAppFlowModule
                 return;
             }
 
-            transitionRoutine = StartCoroutine(Animate(open));
+            if (open && blurBackdrop)
+            {
+                // Keep the modal invisible while the underlying screen is captured.
+                ApplyOpenState(0f);
+                transitionRoutine = StartCoroutine(CaptureBackdropAndAnimate());
+            }
+            else
+            {
+                transitionRoutine = StartCoroutine(Animate(open));
+            }
+        }
+
+        private IEnumerator CaptureBackdropAndAnimate()
+        {
+            yield return new WaitForEndOfFrame();
+
+            Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
+            if (screenshot != null)
+            {
+                int divisor = Mathf.Max(2, blurDownsample);
+                int width = Mathf.Max(1, screenshot.width / divisor);
+                int height = Mathf.Max(1, screenshot.height / divisor);
+                RenderTexture temporary = RenderTexture.GetTemporary(
+                    width,
+                    height,
+                    0,
+                    RenderTextureFormat.Default,
+                    RenderTextureReadWrite.Default);
+                temporary.filterMode = FilterMode.Bilinear;
+                Graphics.Blit(screenshot, temporary);
+
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = temporary;
+                ReleaseBackdropTexture();
+                blurredBackdropTexture = new Texture2D(width, height, TextureFormat.RGB24, false)
+                {
+                    filterMode = FilterMode.Bilinear,
+                    wrapMode = TextureWrapMode.Clamp
+                };
+                blurredBackdropTexture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
+                blurredBackdropTexture.Apply(false, false);
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(temporary);
+                Destroy(screenshot);
+
+                EnsureBackdropImage();
+                blurredBackdrop.texture = blurredBackdropTexture;
+                blurredBackdrop.enabled = true;
+            }
+
+            yield return Animate(true);
+        }
+
+        private void EnsureBackdropImage()
+        {
+            if (blurredBackdrop != null)
+            {
+                return;
+            }
+
+            GameObject backdropObject = new GameObject(
+                "Blurred Backdrop",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(RawImage));
+            RectTransform backdropTransform = backdropObject.GetComponent<RectTransform>();
+            backdropTransform.SetParent(transform, false);
+            backdropTransform.SetAsFirstSibling();
+            backdropTransform.anchorMin = Vector2.zero;
+            backdropTransform.anchorMax = Vector2.one;
+            backdropTransform.anchoredPosition = Vector2.zero;
+            backdropTransform.sizeDelta = Vector2.zero;
+
+            blurredBackdrop = backdropObject.GetComponent<RawImage>();
+            blurredBackdrop.raycastTarget = false;
+        }
+
+        private void ReleaseBackdropTexture()
+        {
+            if (blurredBackdropTexture == null)
+            {
+                return;
+            }
+
+            Destroy(blurredBackdropTexture);
+            blurredBackdropTexture = null;
         }
 
         private void Initialize()
@@ -232,10 +324,101 @@ namespace SharedAppFlowModule
 
         private void SetPage(GameObject activePage)
         {
+            if (pageTransitionRoutine != null)
+            {
+                StopCoroutine(pageTransitionRoutine);
+                pageTransitionRoutine = null;
+            }
+
             SetPageActive(optionsPage, activePage);
             SetPageActive(settingsPage, activePage);
             SetPageActive(statsPage, activePage);
             SetPageActive(creditsPage, activePage);
+
+            if (activePage != null)
+            {
+                RectTransform rect = activePage.transform as RectTransform;
+                if (rect != null)
+                {
+                    rect.anchoredPosition = Vector2.zero;
+                }
+
+                CanvasGroup group = activePage.GetComponent<CanvasGroup>();
+                if (group != null)
+                {
+                    group.alpha = 1f;
+                    group.interactable = true;
+                    group.blocksRaycasts = true;
+                }
+            }
+        }
+
+        private void ShowPageWithSlide(GameObject activePage)
+        {
+            if (activePage == null)
+            {
+                return;
+            }
+
+            if (pageTransitionRoutine != null)
+            {
+                StopCoroutine(pageTransitionRoutine);
+            }
+
+            SetPageActive(optionsPage, activePage);
+            SetPageActive(settingsPage, activePage);
+            SetPageActive(statsPage, activePage);
+            SetPageActive(creditsPage, activePage);
+            pageTransitionRoutine = StartCoroutine(AnimatePageUp(activePage));
+        }
+
+        private IEnumerator AnimatePageUp(GameObject page)
+        {
+            RectTransform pageTransform = page.transform as RectTransform;
+            CanvasGroup pageCanvasGroup = page.GetComponent<CanvasGroup>();
+            if (pageCanvasGroup == null)
+            {
+                pageCanvasGroup = page.AddComponent<CanvasGroup>();
+            }
+
+            Vector2 targetPosition = Vector2.zero;
+            Vector2 startPosition = targetPosition + hiddenOffset;
+            float elapsed = 0f;
+            float duration = Mathf.Max(0.01f, transitionDuration);
+
+            if (pageTransform != null)
+            {
+                pageTransform.anchoredPosition = startPosition;
+            }
+
+            pageCanvasGroup.alpha = 0f;
+            pageCanvasGroup.interactable = false;
+            pageCanvasGroup.blocksRaycasts = false;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                t = 1f - Mathf.Pow(1f - t, 3f);
+
+                if (pageTransform != null)
+                {
+                    pageTransform.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, t);
+                }
+
+                pageCanvasGroup.alpha = t;
+                yield return null;
+            }
+
+            if (pageTransform != null)
+            {
+                pageTransform.anchoredPosition = targetPosition;
+            }
+
+            pageCanvasGroup.alpha = 1f;
+            pageCanvasGroup.interactable = true;
+            pageCanvasGroup.blocksRaycasts = true;
+            pageTransitionRoutine = null;
         }
 
         private static void SetPageActive(GameObject page, GameObject activePage)

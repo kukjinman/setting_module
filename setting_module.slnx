@@ -1,4 +1,6 @@
 ﻿<Solution>
-  <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="SharedAppFlowModule.csproj" />
+  <Project Path="SharedCoreModule.Editor.csproj" />
+  <Project Path="SharedCoreModule.csproj" />
+  <Project Path="SharedAppFlowModule.Editor.csproj" />
 </Solution>

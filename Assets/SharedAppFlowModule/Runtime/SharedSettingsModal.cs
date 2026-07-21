@@ -26,6 +26,7 @@ namespace SharedAppFlowModule
         [SerializeField] private Toggle vibrationToggle;
         [SerializeField] private float transitionDuration = 0.22f;
         [SerializeField] private Vector2 hiddenOffset = new Vector2(0f, -420f);
+        [SerializeField] private Vector2 shownPosition = Vector2.zero;
         [Header("Backdrop")]
         [SerializeField] private bool blurBackdrop = true;
         [SerializeField, Range(2, 16)] private int blurDownsample = 8;
@@ -33,7 +34,6 @@ namespace SharedAppFlowModule
         private CanvasGroup canvasGroup;
         private RawImage blurredBackdrop;
         private Texture2D blurredBackdropTexture;
-        private Vector2 shownPosition;
         private Coroutine transitionRoutine;
         private Coroutine pageTransitionRoutine;
         private bool isOpen;
@@ -75,6 +75,7 @@ namespace SharedAppFlowModule
             bgmVolumeSlider = bgmSlider;
             sfxVolumeSlider = sfxSlider;
             vibrationToggle = hapticsToggle;
+            shownPosition = panel != null ? panel.anchoredPosition : Vector2.zero;
             initialized = false;
         }
 
@@ -150,6 +151,12 @@ namespace SharedAppFlowModule
             {
                 ApplyOpenState(open ? 1f : 0f);
                 gameObject.SetActive(open);
+
+                if (!open && panelRoot != null)
+                {
+                    panelRoot.anchoredPosition = shownPosition;
+                }
+
                 return;
             }
 
@@ -255,7 +262,6 @@ namespace SharedAppFlowModule
 
             if (!initialized)
             {
-                shownPosition = panelRoot != null ? panelRoot.anchoredPosition : Vector2.zero;
                 initialized = true;
             }
         }
@@ -535,6 +541,11 @@ namespace SharedAppFlowModule
             if (!open)
             {
                 gameObject.SetActive(false);
+
+                if (panelRoot != null)
+                {
+                    panelRoot.anchoredPosition = shownPosition;
+                }
             }
 
             transitionRoutine = null;

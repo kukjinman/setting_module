@@ -17,7 +17,6 @@ namespace SharedAppFlowModule.Editor
         private const string RootName = "Shared App Flow Root";
         private const string CanvasName = "Shared App Flow Canvas";
         private const string PixelPanelPath = "Assets/2D Pixel Quest Vol.3 - The UI-GUI/Sprites PNG/Panels/Panels/F_UI_Panel_A.png";
-        private const string PixelFontPath = "Assets/2D Pixel Quest Vol.3 - The UI-GUI/Font/Fantasypixelfont.ttf";
         private const string IntroLogoGuid = "b140f2c6ca9534e6db981042d930d5ba";
 
         private static readonly Vector2 ReferenceResolution = new Vector2(960f, 540f);
@@ -695,8 +694,7 @@ namespace SharedAppFlowModule.Editor
 
         private static Font LoadFont()
         {
-            Font font = AssetDatabase.LoadAssetAtPath<Font>(PixelFontPath);
-            return font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         private static void EnsureFolders()

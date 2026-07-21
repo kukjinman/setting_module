@@ -7,19 +7,22 @@ Reusable Unity package containing shared core services and an intro/login/home/s
 In Unity, open **Window > Package Manager**, press **+**, select **Add package from git URL**, and enter:
 
 ```text
-https://github.com/kukjinman/setting_module.git#v1.0.0
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#main
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#main
 ```
 
 Alternatively, add the dependency to the game's `Packages/manifest.json`:
 
 ```json
-"com.sharedmodules.setting-module": "https://github.com/kukjinman/setting_module.git#v1.0.0"
+"com.sharedmodules.core-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#main",
+"com.sharedmodules.setting-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#main"
 ```
 
 For local development, use:
 
 ```json
-"com.sharedmodules.setting-module": "file:../../setting_module"
+"com.sharedmodules.core-module": "file:../../setting_module/Assets/SharedCoreModule",
+"com.sharedmodules.setting-module": "file:../../setting_module/Assets/SharedAppFlowModule"
 ```
 
 ## Create scene objects
@@ -48,13 +51,15 @@ Unity에서 **Window > Package Manager**를 열고 **+ > Add package from git UR
 개발 중 최신 `main` 브랜치를 사용하려면:
 
 ```text
-https://github.com/kukjinman/setting_module.git#main
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#main
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#main
 ```
 
 릴리스 게임에서는 변경되지 않는 태그 버전을 권장합니다.
 
 ```text
-https://github.com/kukjinman/setting_module.git#v1.0.0
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#v1.0.0
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#v1.0.0
 ```
 
 ### 3. 씬 생성

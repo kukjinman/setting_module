@@ -1,0 +1,21 @@
+{
+  "name": "com.sharedmodules.setting-module",
+  "version": "1.0.0",
+  "displayName": "Shared Setting Module",
+  "description": "Shared intro, login, home, and settings UI flow.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.sharedmodules.core-module": "1.0.0",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.inputsystem": "1.11.2"
+  },
+  "keywords": [
+    "settings",
+    "authentication",
+    "app-flow",
+    "game-center"
+  ],
+  "author": {
+    "name": "Shared Modules"
+  }
+}

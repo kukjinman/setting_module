@@ -1,0 +1,16 @@
+{
+  "name": "com.sharedmodules.core-module",
+  "version": "1.0.0",
+  "displayName": "Shared Core Module",
+  "description": "Shared save, authentication, audio, and native haptics services.",
+  "unity": "6000.0",
+  "keywords": [
+    "shared",
+    "audio",
+    "authentication",
+    "haptics"
+  ],
+  "author": {
+    "name": "Shared Modules"
+  }
+}

@@ -88,7 +88,7 @@ namespace SharedAppFlowModule
 #endif
 
 #if ENABLE_LEGACY_INPUT_MANAGER
-            if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+            if (Input.touchCount > 0 && Input.GetTouch(0).phase == UnityEngine.TouchPhase.Began)
             {
                 return true;
             }

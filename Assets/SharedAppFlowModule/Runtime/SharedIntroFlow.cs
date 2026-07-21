@@ -216,7 +216,7 @@ namespace SharedAppFlowModule
             if (Input.touchCount > 0)
             {
                 Touch touch = Input.GetTouch(0);
-                return touch.phase == TouchPhase.Began;
+                return touch.phase == UnityEngine.TouchPhase.Began;
             }
 
             return Input.GetMouseButtonDown(0) || Input.anyKeyDown;

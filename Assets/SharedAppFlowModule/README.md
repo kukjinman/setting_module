@@ -22,6 +22,41 @@ Guest login works immediately. Android uses `SharedGooglePlayGamesLoginProvider`
 
 Home and Gameplay are separate panels in the generated demo. The Gameplay panel is an entry placeholder; a production game can replace that transition with scene loading without changing the authentication flow.
 
+## Reusing the button design in game scenes
+
+`SharedButtonVisual` is a public uGUI component that can style an existing `Button` in any game, game-over, or menu scene. It supplies consistent outline, shadow, surface highlight, depth rim, pointer animation, UI selection, and keyboard/gamepad Submit feedback without a TextMeshPro dependency.
+
+Add it to the same GameObject as an existing `Image` and `Button`, then choose the role in code:
+
+```csharp
+using SharedAppFlowModule;
+using UnityEngine;
+
+public sealed class GameButtonTheme : MonoBehaviour
+{
+    [SerializeField] private SharedButtonVisual playButton;
+    [SerializeField] private SharedButtonVisual homeIconButton;
+
+    private void Awake()
+    {
+        playButton.Configure(SharedButtonVariant.Primary);
+        homeIconButton.Configure(SharedButtonVariant.Navigation);
+    }
+}
+```
+
+Games can override the module palette without modifying the package. The optional fourth color controls label/icon contrast:
+
+```csharp
+visual.Configure(
+    SharedButtonVariant.Primary,
+    new Color(0.12f, 0.22f, 0.38f, 1f), // base
+    new Color(0.2f, 0.92f, 0.78f, 1f),  // accent
+    Color.white);                        // label/icon
+```
+
+Available roles are `Primary`, `Secondary`, `Navigation`, `Back`, and `Destructive`. Calling `Configure` repeatedly updates the existing visual layers and effects rather than adding duplicates. Decorative images do not receive raycasts, so existing `Button.onClick` listeners remain unchanged.
+
 Runtime routing:
 
 1. A saved Guest session goes directly from Intro to Home.

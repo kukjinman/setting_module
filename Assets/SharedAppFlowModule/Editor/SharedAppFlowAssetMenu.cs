@@ -166,7 +166,8 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 SharedAppFlowButtonAction.LoginWithPlatform,
                 SharedAppScreenId.Home,
-                font);
+                font,
+                variant: SharedButtonVariant.Secondary);
 
             Text status = CreateText(
                 "Login Status",
@@ -226,7 +227,8 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 SharedAppFlowButtonAction.LoginWithPlatform,
                 SharedAppScreenId.Home,
-                font);
+                font,
+                variant: SharedButtonVariant.Navigation);
 
             SharedPlatformAccessButtonVisibility platformButtonVisibility =
                 homePanel.gameObject.AddComponent<SharedPlatformAccessButtonVisibility>();
@@ -241,7 +243,8 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 SharedAppFlowButtonAction.OpenSettings,
                 SharedAppScreenId.Home,
-                font);
+                font,
+                variant: SharedButtonVariant.Secondary);
 
             CreateButton(
                 "Logout Button",
@@ -252,7 +255,8 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 SharedAppFlowButtonAction.Logout,
                 SharedAppScreenId.Login,
-                font);
+                font,
+                variant: SharedButtonVariant.Destructive);
 
             return homePanel;
         }
@@ -287,7 +291,8 @@ namespace SharedAppFlowModule.Editor
                 SharedAppScreenId.Home,
                 controller,
                 panelSprite,
-                font);
+                font,
+                SharedButtonVariant.Back);
         }
 
         private static SharedAppScreenPanel CreateIntroPanel(
@@ -344,7 +349,8 @@ namespace SharedAppFlowModule.Editor
             SharedAppScreenId primaryTarget,
             SharedAppFlowController controller,
             Sprite panelSprite,
-            Font font)
+            Font font,
+            SharedButtonVariant primaryVariant = SharedButtonVariant.Primary)
         {
             GameObject panelObject = CreateUiObject(name, parent);
             Stretch(panelObject.GetComponent<RectTransform>());
@@ -377,7 +383,8 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 primaryAction,
                 primaryTarget,
-                font);
+                font,
+                variant: primaryVariant);
 
             return panel;
         }
@@ -416,13 +423,8 @@ namespace SharedAppFlowModule.Editor
                 "CREDITS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
             Button closeButton = CreateButton(
                 "Back Button", optionsPage.transform, new Vector2(0f, -80f), new Vector2(270f, 38f),
-                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
-            ColorBlock backColors = closeButton.colors;
-            backColors.normalColor = new Color(0.9f, 0.45f, 0.05f, 1f);
-            backColors.highlightedColor = new Color(1f, 0.58f, 0.08f, 1f);
-            backColors.pressedColor = new Color(0.72f, 0.32f, 0.03f, 1f);
-            backColors.selectedColor = backColors.highlightedColor;
-            closeButton.colors = backColors;
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Back);
 
             GameObject settingsPage = CreateModalPage("Settings Page", panelObject.transform);
             CreateText("Title", settingsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "SETTINGS", 24, font, FontStyle.Bold);
@@ -432,7 +434,8 @@ namespace SharedAppFlowModule.Editor
             Toggle vibrationToggle = CreateSettingsToggle("Vibration", settingsPage.transform, new Vector2(55f, -75f), font);
             Button settingsBackButton = CreateButton(
                 "Back Button", settingsPage.transform, new Vector2(0f, -130f), new Vector2(270f, 34f),
-                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Back);
 
             GameObject statsPage = CreateModalPage("Stats Page", panelObject.transform);
             CreateText("Title", statsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "STATS", 24, font, FontStyle.Bold);
@@ -440,7 +443,8 @@ namespace SharedAppFlowModule.Editor
                 "Games Played    0\nBest Score      0\nWins            0", 16, font, FontStyle.Normal);
             Button statsBackButton = CreateButton(
                 "Back Button", statsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
-                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Back);
 
             GameObject creditsPage = CreateModalPage("Credits Page", panelObject.transform);
             CreateText("Title", creditsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "CREDITS", 24, font, FontStyle.Bold);
@@ -448,7 +452,8 @@ namespace SharedAppFlowModule.Editor
                 "GAME BY YOUR STUDIO\n\nPowered by Shared Modules", 16, font, FontStyle.Normal);
             Button creditsBackButton = CreateButton(
                 "Back Button", creditsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
-                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Back);
 
             optionsPage.SetActive(true);
             settingsPage.SetActive(false);
@@ -538,22 +543,18 @@ namespace SharedAppFlowModule.Editor
             SharedAppFlowButtonAction action,
             SharedAppScreenId target,
             Font font,
-            bool addFlowButton = true)
+            bool addFlowButton = true,
+            SharedButtonVariant variant = SharedButtonVariant.Secondary)
         {
             GameObject buttonObject = CreateUiObject(name, parent);
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
             Center(rect, size, position);
 
             Image image = buttonObject.AddComponent<Image>();
-            image.color = new Color(0.12f, 0.16f, 0.2f, 1f);
+            image.color = Color.white;
 
             Button button = buttonObject.AddComponent<Button>();
-            ColorBlock colors = button.colors;
-            colors.normalColor = new Color(0.12f, 0.16f, 0.2f, 1f);
-            colors.highlightedColor = new Color(0.18f, 0.24f, 0.3f, 1f);
-            colors.pressedColor = new Color(0.08f, 0.11f, 0.14f, 1f);
-            colors.selectedColor = colors.highlightedColor;
-            button.colors = colors;
+            SharedButtonVisual visual = buttonObject.AddComponent<SharedButtonVisual>();
 
             if (addFlowButton)
             {
@@ -562,6 +563,7 @@ namespace SharedAppFlowModule.Editor
             }
 
             CreateText("Label", buttonObject.transform, Vector2.zero, size, label, 15, font, FontStyle.Bold);
+            visual.Configure(variant);
             return button;
         }
 

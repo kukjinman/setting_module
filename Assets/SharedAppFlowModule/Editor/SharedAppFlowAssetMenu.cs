@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using SharedAppFlowModule;
 using UnityEditor;
+using UnityEditor.Localization;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
 using UnityEngine.UI;
 
 namespace SharedAppFlowModule.Editor
@@ -13,6 +18,11 @@ namespace SharedAppFlowModule.Editor
         // Generated assets must live under Assets. Git/registry packages may be read-only.
         private const string ModuleRoot = "Assets/SharedModules/Generated";
         private const string PrefabsFolder = ModuleRoot + "/Prefabs";
+        private const string LocalizationFolder = ModuleRoot + "/Localization";
+        private const string LocalesFolder = LocalizationFolder + "/Locales";
+        private const string TablesFolder = LocalizationFolder + "/Tables";
+        private const string LocalizationSettingsPath = LocalizationFolder + "/Shared Localization Settings.asset";
+        private const string SharedUiTableName = "Shared UI";
         private const string RootPrefabPath = PrefabsFolder + "/Shared App Flow Root.prefab";
         private const string RootName = "Shared App Flow Root";
         private const string CanvasName = "Shared App Flow Canvas";
@@ -25,6 +35,7 @@ namespace SharedAppFlowModule.Editor
         public static void SetupIntroLoginHomeDemo()
         {
             EnsureFolders();
+            EnsureLocalizationAssets();
 
             GameObject existingRoot = GameObject.Find(RootName);
             if (existingRoot != null)
@@ -115,12 +126,13 @@ namespace SharedAppFlowModule.Editor
 
             SharedAppScreenPanel loginPanel = CreateLoginPanel(canvasObject.transform, controller, panelSprite, font);
 
-            SharedAppScreenPanel homePanel = CreateHomePanel(canvasObject.transform, controller, panelSprite, font);
+            SharedAppScreenPanel homePanel = CreateHomePanel(canvasObject.transform, controller, font);
             SharedAppScreenPanel gameplayPanel = CreateGameplayPanel(canvasObject.transform, controller, panelSprite, font);
-            SharedSettingsModal settingsModal = CreateSettingsModal(canvasObject.transform, panelSprite, font);
+            SharedAppScreenPanel collectionPanel = CreateCollectionPanel(canvasObject.transform, controller, panelSprite, font);
+            SharedSettingsModal settingsModal = CreateSettingsModal(canvasObject.transform, controller, panelSprite, font);
 
             controller.Configure(
-                new[] { introPanel, loginPanel, homePanel, gameplayPanel },
+                new[] { introPanel, loginPanel, homePanel, gameplayPanel, collectionPanel },
                 settingsModal,
                 SharedAppScreenId.Intro);
 
@@ -128,6 +140,7 @@ namespace SharedAppFlowModule.Editor
             loginPanel.Hide(true);
             homePanel.Hide(true);
             gameplayPanel.Hide(true);
+            collectionPanel.Hide(true);
             settingsModal.SetOpen(false, true);
 
             EnsureEventSystem();
@@ -151,7 +164,11 @@ namespace SharedAppFlowModule.Editor
                 SharedAppScreenId.Home,
                 controller,
                 panelSprite,
-                font);
+                font,
+                SharedButtonVariant.Primary,
+                "login",
+                "login_subtitle",
+                "guest_login");
 
             Transform content = loginPanel.transform.Find("Content");
             RectTransform guestButton = content.Find("Primary Button").GetComponent<RectTransform>();
@@ -199,79 +216,163 @@ namespace SharedAppFlowModule.Editor
         private static SharedAppScreenPanel CreateHomePanel(
             Transform parent,
             SharedAppFlowController controller,
-            Sprite panelSprite,
             Font font)
         {
-            SharedAppScreenPanel homePanel = CreateScreenPanel(
-                parent,
-                SharedAppScreenId.Home,
-                "Home Panel",
-                "HOME",
-                "Main hub placeholder",
-                "PLAY",
-                SharedAppFlowButtonAction.ShowScreen,
-                SharedAppScreenId.Gameplay,
-                controller,
-                panelSprite,
-                font);
+            GameObject panelObject = CreateUiObject("Home Panel", parent);
+            Stretch(panelObject.GetComponent<RectTransform>());
 
-            Transform content = homePanel.transform.Find("Content");
-            content.Find("Primary Button").GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -48f);
+            CanvasGroup canvasGroup = panelObject.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
 
-            Button platformAccessButton = CreateButton(
-                "Platform Access Button",
-                content,
-                new Vector2(-220f, 130f),
-                new Vector2(52f, 42f),
-                GetPlatformIconLabel(),
-                controller,
-                SharedAppFlowButtonAction.LoginWithPlatform,
-                SharedAppScreenId.Home,
-                font,
-                variant: SharedButtonVariant.Navigation);
+            GameObject contentObject = CreateUiObject("Home Content", panelObject.transform);
+            RectTransform contentRect = contentObject.GetComponent<RectTransform>();
+            Stretch(contentRect);
 
-            SharedPlatformAccessButtonVisibility platformButtonVisibility =
-                homePanel.gameObject.AddComponent<SharedPlatformAccessButtonVisibility>();
-            platformButtonVisibility.Configure(platformAccessButton, 5f);
+            Image artwork = CreateFullImage("Game Artwork", contentObject.transform, Color.black);
+            artwork.raycastTarget = false;
+            artwork.preserveAspect = false;
 
-            CreateButton(
-                "Options Button",
-                content,
-                new Vector2(-90f, -110f),
-                new Vector2(160f, 38f),
-                "OPTIONS",
-                controller,
-                SharedAppFlowButtonAction.OpenSettings,
-                SharedAppScreenId.Home,
-                font,
-                variant: SharedButtonVariant.Secondary);
+            GameObject profileObject = CreateUiObject("Profile", contentObject.transform);
+            RectTransform profileRect = profileObject.GetComponent<RectTransform>();
+            AnchorBottomLeft(profileRect, new Vector2(128f, 82f), new Vector2(24f, 18f));
+            Image profileBackground = profileObject.AddComponent<Image>();
+            profileBackground.color = new Color(0.09f, 0.14f, 0.15f, 0.96f);
+            profileBackground.raycastTarget = false;
+            Outline profileOutline = profileObject.AddComponent<Outline>();
+            profileOutline.effectColor = new Color(0.48f, 0.6f, 0.56f, 0.92f);
+            profileOutline.effectDistance = new Vector2(2f, -2f);
 
-            CreateButton(
-                "Logout Button",
-                content,
-                new Vector2(110f, -110f),
-                new Vector2(160f, 38f),
-                "LOGOUT",
-                controller,
-                SharedAppFlowButtonAction.Logout,
-                SharedAppScreenId.Login,
-                font,
-                variant: SharedButtonVariant.Destructive);
+            Text profileTitle = CreateText("Title", profileObject.transform, new Vector2(0f, 27f),
+                new Vector2(116f, 20f), "Profile", 13, font, FontStyle.Bold);
+            ConfigureLocalizedText(profileTitle, "profile");
+            GameObject profileSlotObject = CreateUiObject("Profile Slot", profileObject.transform);
+            RectTransform profileSlotRect = profileSlotObject.GetComponent<RectTransform>();
+            Center(profileSlotRect, new Vector2(96f, 25f), new Vector2(0f, 2f));
+            Image profileSlotBackground = profileSlotObject.AddComponent<Image>();
+            profileSlotBackground.color = new Color(0.25f, 0.33f, 0.34f, 1f);
+            profileSlotBackground.raycastTarget = false;
+            Text profileSlot = CreateText("Slot", profileSlotObject.transform, Vector2.zero,
+                new Vector2(96f, 25f), "P1", 15, font, FontStyle.Bold);
+            profileSlot.color = Color.white;
+            Text profileName = CreateText("Player Name", profileObject.transform, new Vector2(0f, -27f),
+                new Vector2(118f, 22f), "Playing as Guest", 10, font, FontStyle.Normal);
+            profileName.color = new Color(0.86f, 0.9f, 0.87f, 1f);
 
+            GameObject dockObject = CreateUiObject("Bottom Navigation", contentObject.transform);
+            RectTransform dockRect = dockObject.GetComponent<RectTransform>();
+            AnchorBottomLeft(dockRect, new Vector2(666f, 68f), new Vector2(170f, 18f));
+            Image dockBackground = dockObject.AddComponent<Image>();
+            dockBackground.color = new Color(0.05f, 0.1f, 0.11f, 0.96f);
+            dockBackground.raycastTarget = false;
+            Outline dockOutline = dockObject.AddComponent<Outline>();
+            dockOutline.effectColor = new Color(0.42f, 0.53f, 0.5f, 0.9f);
+            dockOutline.effectDistance = new Vector2(2f, -2f);
+
+            Button playButton = CreateButton(
+                "Play Button", dockObject.transform, new Vector2(-249f, 0f), new Vector2(150f, 46f),
+                "PLAY", controller, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Gameplay, font,
+                variant: SharedButtonVariant.Primary,
+                localizationKey: "play");
+            playButton.GetComponent<SharedButtonVisual>().Configure(
+                SharedButtonVariant.Primary,
+                new Color(0.05f, 0.5f, 0.78f, 1f),
+                new Color(0.25f, 0.82f, 1f, 1f),
+                Color.white);
+
+            Button optionsButton = CreateButton(
+                "Options Button", dockObject.transform, new Vector2(-105f, 0f), new Vector2(122f, 46f),
+                "OPTIONS", controller, SharedAppFlowButtonAction.OpenSettings, SharedAppScreenId.Home, font,
+                localizationKey: "options");
+            optionsButton.GetComponent<SharedButtonVisual>().Configure(
+                SharedButtonVariant.Secondary,
+                new Color(0.83f, 0.48f, 0.08f, 1f),
+                new Color(1f, 0.72f, 0.22f, 1f),
+                Color.white);
+
+            Button quitButton = CreateButton(
+                "Quit Button", dockObject.transform, new Vector2(19f, 0f), new Vector2(106f, 46f),
+                "QUIT", controller, SharedAppFlowButtonAction.Quit, SharedAppScreenId.Home, font,
+                variant: SharedButtonVariant.Destructive,
+                localizationKey: "quit");
+            quitButton.GetComponent<SharedButtonVisual>().Configure(
+                SharedButtonVariant.Destructive,
+                new Color(0.68f, 0.16f, 0.19f, 1f),
+                new Color(1f, 0.38f, 0.38f, 1f),
+                Color.white);
+
+            Button collectionButton = CreateButton(
+                "Collection Button", dockObject.transform, new Vector2(181f, 0f), new Vector2(170f, 46f),
+                "COLLECTION", controller, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Collection, font,
+                localizationKey: "collection");
+            collectionButton.GetComponent<SharedButtonVisual>().Configure(
+                SharedButtonVariant.Secondary,
+                new Color(0.12f, 0.51f, 0.32f, 1f),
+                new Color(0.28f, 0.82f, 0.52f, 1f),
+                Color.white);
+
+            Button languageButton = CreateButton(
+                "Language Button", contentObject.transform, Vector2.zero, new Vector2(96f, 46f),
+                "A/文  Language", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Navigation);
+            AnchorBottomRight(
+                languageButton.GetComponent<RectTransform>(),
+                new Vector2(96f, 46f),
+                new Vector2(24f, 29f));
+            languageButton.GetComponent<SharedButtonVisual>().Configure(
+                SharedButtonVariant.Navigation,
+                new Color(0.15f, 0.2f, 0.21f, 1f),
+                new Color(0.52f, 0.66f, 0.62f, 1f),
+                Color.white);
+            Text currentLanguageLabel = languageButton.transform.Find("Label").GetComponent<Text>();
+            currentLanguageLabel.fontSize = 11;
+
+            GameObject languagePopup = CreateUiObject("Language Popup", contentObject.transform);
+            RectTransform popupRect = languagePopup.GetComponent<RectTransform>();
+            AnchorBottomRight(popupRect, new Vector2(160f, 10f), new Vector2(24f, 84f));
+            Image popupBackground = languagePopup.AddComponent<Image>();
+            popupBackground.color = new Color(0.05f, 0.1f, 0.11f, 0.98f);
+            Outline popupOutline = languagePopup.AddComponent<Outline>();
+            popupOutline.effectColor = new Color(0.52f, 0.66f, 0.62f, 0.95f);
+            popupOutline.effectDistance = new Vector2(2f, -2f);
+
+            VerticalLayoutGroup languageLayout = languagePopup.AddComponent<VerticalLayoutGroup>();
+            languageLayout.padding = new RectOffset(8, 8, 8, 8);
+            languageLayout.spacing = 6f;
+            languageLayout.childAlignment = TextAnchor.LowerCenter;
+            languageLayout.childControlWidth = true;
+            languageLayout.childControlHeight = true;
+            languageLayout.childForceExpandWidth = true;
+            languageLayout.childForceExpandHeight = false;
+
+            ContentSizeFitter popupFitter = languagePopup.AddComponent<ContentSizeFitter>();
+            popupFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            popupFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            Button languageOptionTemplate = CreateButton(
+                "Language Option Template", languagePopup.transform, Vector2.zero, new Vector2(144f, 36f),
+                "Language", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                SharedButtonVariant.Secondary);
+            LayoutElement languageOptionLayout = languageOptionTemplate.gameObject.AddComponent<LayoutElement>();
+            languageOptionLayout.preferredHeight = 36f;
+            languageOptionTemplate.gameObject.SetActive(false);
+            languagePopup.SetActive(false);
+
+            SharedLanguageSelector languageSelector = panelObject.AddComponent<SharedLanguageSelector>();
+            languageSelector.Configure(
+                languageButton,
+                currentLanguageLabel,
+                languagePopup,
+                languagePopup.transform,
+                languageOptionTemplate);
+
+            SharedHomeView homeView = panelObject.AddComponent<SharedHomeView>();
+            homeView.Configure(artwork, profileSlot, profileName);
+
+            SharedAppScreenPanel homePanel = panelObject.AddComponent<SharedAppScreenPanel>();
+            homePanel.Configure(SharedAppScreenId.Home, contentRect);
             return homePanel;
-        }
-
-        private static string GetPlatformIconLabel()
-        {
-            switch (EditorUserBuildSettings.activeBuildTarget)
-            {
-                case BuildTarget.iOS:
-                    return "GC";
-                case BuildTarget.Android:
-                    return "PG";
-                default:
-                    return "GC";
-            }
         }
 
         private static SharedAppScreenPanel CreateGameplayPanel(
@@ -292,7 +393,34 @@ namespace SharedAppFlowModule.Editor
                 controller,
                 panelSprite,
                 font,
-                SharedButtonVariant.Back);
+                SharedButtonVariant.Back,
+                "gameplay",
+                "gameplay_subtitle",
+                "back_to_home");
+        }
+
+        private static SharedAppScreenPanel CreateCollectionPanel(
+            Transform parent,
+            SharedAppFlowController controller,
+            Sprite panelSprite,
+            Font font)
+        {
+            return CreateScreenPanel(
+                parent,
+                SharedAppScreenId.Collection,
+                "Collection Panel",
+                "COLLECTION",
+                "Game-specific collection content goes here",
+                "BACK TO HOME",
+                SharedAppFlowButtonAction.ShowScreen,
+                SharedAppScreenId.Home,
+                controller,
+                panelSprite,
+                font,
+                SharedButtonVariant.Back,
+                "collection",
+                "collection_subtitle",
+                "back_to_home");
         }
 
         private static SharedAppScreenPanel CreateIntroPanel(
@@ -350,7 +478,10 @@ namespace SharedAppFlowModule.Editor
             SharedAppFlowController controller,
             Sprite panelSprite,
             Font font,
-            SharedButtonVariant primaryVariant = SharedButtonVariant.Primary)
+            SharedButtonVariant primaryVariant = SharedButtonVariant.Primary,
+            string titleLocalizationKey = null,
+            string subtitleLocalizationKey = null,
+            string primaryLocalizationKey = null)
         {
             GameObject panelObject = CreateUiObject(name, parent);
             Stretch(panelObject.GetComponent<RectTransform>());
@@ -371,8 +502,22 @@ namespace SharedAppFlowModule.Editor
 
             panel.Configure(screenId, contentRect);
 
-            CreateText("Title", contentObject.transform, new Vector2(0f, 88f), new Vector2(440f, 48f), title, 28, font, FontStyle.Bold);
-            CreateText("Subtitle", contentObject.transform, new Vector2(0f, 34f), new Vector2(420f, 44f), subtitle, 16, font, FontStyle.Normal);
+            Text titleText = CreateText(
+                "Title", contentObject.transform, new Vector2(0f, 88f), new Vector2(440f, 48f),
+                title, 28, font, FontStyle.Bold);
+            Text subtitleText = CreateText(
+                "Subtitle", contentObject.transform, new Vector2(0f, 34f), new Vector2(420f, 44f),
+                subtitle, 16, font, FontStyle.Normal);
+
+            if (!string.IsNullOrEmpty(titleLocalizationKey))
+            {
+                ConfigureLocalizedText(titleText, titleLocalizationKey);
+            }
+
+            if (!string.IsNullOrEmpty(subtitleLocalizationKey))
+            {
+                ConfigureLocalizedText(subtitleText, subtitleLocalizationKey);
+            }
 
             CreateButton(
                 "Primary Button",
@@ -384,12 +529,17 @@ namespace SharedAppFlowModule.Editor
                 primaryAction,
                 primaryTarget,
                 font,
-                variant: primaryVariant);
+                variant: primaryVariant,
+                localizationKey: primaryLocalizationKey);
 
             return panel;
         }
 
-        private static SharedSettingsModal CreateSettingsModal(Transform parent, Sprite panelSprite, Font font)
+        private static SharedSettingsModal CreateSettingsModal(
+            Transform parent,
+            SharedAppFlowController controller,
+            Sprite panelSprite,
+            Font font)
         {
             GameObject modalObject = CreateUiObject("Shared Options Modal", parent);
             Stretch(modalObject.GetComponent<RectTransform>());
@@ -410,50 +560,74 @@ namespace SharedAppFlowModule.Editor
             ApplyPanelSprite(panelImage, panelSprite, Color.white);
 
             GameObject optionsPage = CreateModalPage("Options Menu", panelObject.transform);
-            CreateText("Title", optionsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "OPTIONS", 24, font, FontStyle.Bold);
+            Text optionsTitle = CreateText("Title", optionsPage.transform, new Vector2(0f, 125f),
+                new Vector2(300f, 36f), "OPTIONS", 24, font, FontStyle.Bold);
+            ConfigureLocalizedText(optionsTitle, "options");
 
             Button settingsButton = CreateButton(
-                "Settings Button", optionsPage.transform, new Vector2(0f, 65f), new Vector2(250f, 38f),
-                "SETTINGS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "Settings Button", optionsPage.transform, new Vector2(0f, 75f), new Vector2(250f, 36f),
+                "SETTINGS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                localizationKey: "settings");
             Button statsButton = CreateButton(
-                "Stats Button", optionsPage.transform, new Vector2(0f, 20f), new Vector2(250f, 38f),
-                "STATS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "Stats Button", optionsPage.transform, new Vector2(0f, 33f), new Vector2(250f, 36f),
+                "STATS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                localizationKey: "stats");
             Button creditsButton = CreateButton(
-                "Credits Button", optionsPage.transform, new Vector2(0f, -25f), new Vector2(250f, 38f),
-                "CREDITS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false);
+                "Credits Button", optionsPage.transform, new Vector2(0f, -9f), new Vector2(250f, 36f),
+                "CREDITS", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
+                localizationKey: "credits");
+            CreateButton(
+                "Logout Button", optionsPage.transform, new Vector2(0f, -51f), new Vector2(250f, 36f),
+                "LOGOUT", controller, SharedAppFlowButtonAction.Logout, SharedAppScreenId.Login, font,
+                variant: SharedButtonVariant.Destructive,
+                localizationKey: "logout");
             Button closeButton = CreateButton(
-                "Back Button", optionsPage.transform, new Vector2(0f, -80f), new Vector2(270f, 38f),
+                "Back Button", optionsPage.transform, new Vector2(0f, -103f), new Vector2(270f, 36f),
                 "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
-                SharedButtonVariant.Back);
+                SharedButtonVariant.Back,
+                "back");
 
             GameObject settingsPage = CreateModalPage("Settings Page", panelObject.transform);
-            CreateText("Title", settingsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "SETTINGS", 24, font, FontStyle.Bold);
-            Slider masterSlider = CreateVolumeSlider("Master Volume", settingsPage.transform, new Vector2(55f, 65f), font);
-            Slider bgmSlider = CreateVolumeSlider("Music Volume", settingsPage.transform, new Vector2(55f, 15f), font);
-            Slider sfxSlider = CreateVolumeSlider("Sound Effects", settingsPage.transform, new Vector2(55f, -35f), font);
-            Toggle vibrationToggle = CreateSettingsToggle("Vibration", settingsPage.transform, new Vector2(55f, -75f), font);
+            Text settingsTitle = CreateText("Title", settingsPage.transform, new Vector2(0f, 125f),
+                new Vector2(300f, 36f), "SETTINGS", 24, font, FontStyle.Bold);
+            ConfigureLocalizedText(settingsTitle, "settings");
+            Slider masterSlider = CreateVolumeSlider(
+                "Master Volume", "master_volume", settingsPage.transform, new Vector2(55f, 65f), font);
+            Slider bgmSlider = CreateVolumeSlider(
+                "Music Volume", "music_volume", settingsPage.transform, new Vector2(55f, 15f), font);
+            Slider sfxSlider = CreateVolumeSlider(
+                "Sound Effects", "sound_effects", settingsPage.transform, new Vector2(55f, -35f), font);
+            Toggle vibrationToggle = CreateSettingsToggle(
+                "Vibration", "vibration", settingsPage.transform, new Vector2(55f, -75f), font);
             Button settingsBackButton = CreateButton(
                 "Back Button", settingsPage.transform, new Vector2(0f, -130f), new Vector2(270f, 34f),
                 "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
-                SharedButtonVariant.Back);
+                SharedButtonVariant.Back,
+                "back");
 
             GameObject statsPage = CreateModalPage("Stats Page", panelObject.transform);
-            CreateText("Title", statsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "STATS", 24, font, FontStyle.Bold);
+            Text statsTitle = CreateText("Title", statsPage.transform, new Vector2(0f, 125f),
+                new Vector2(300f, 36f), "STATS", 24, font, FontStyle.Bold);
+            ConfigureLocalizedText(statsTitle, "stats");
             CreateText("Body", statsPage.transform, new Vector2(0f, 25f), new Vector2(290f, 120f),
                 "Games Played    0\nBest Score      0\nWins            0", 16, font, FontStyle.Normal);
             Button statsBackButton = CreateButton(
                 "Back Button", statsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
                 "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
-                SharedButtonVariant.Back);
+                SharedButtonVariant.Back,
+                "back");
 
             GameObject creditsPage = CreateModalPage("Credits Page", panelObject.transform);
-            CreateText("Title", creditsPage.transform, new Vector2(0f, 125f), new Vector2(300f, 36f), "CREDITS", 24, font, FontStyle.Bold);
+            Text creditsTitle = CreateText("Title", creditsPage.transform, new Vector2(0f, 125f),
+                new Vector2(300f, 36f), "CREDITS", 24, font, FontStyle.Bold);
+            ConfigureLocalizedText(creditsTitle, "credits");
             CreateText("Body", creditsPage.transform, new Vector2(0f, 25f), new Vector2(290f, 120f),
                 "GAME BY YOUR STUDIO\n\nPowered by Shared Modules", 16, font, FontStyle.Normal);
             Button creditsBackButton = CreateButton(
                 "Back Button", creditsPage.transform, new Vector2(0f, -100f), new Vector2(270f, 38f),
                 "BACK", null, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Home, font, false,
-                SharedButtonVariant.Back);
+                SharedButtonVariant.Back,
+                "back");
 
             optionsPage.SetActive(true);
             settingsPage.SetActive(false);
@@ -476,10 +650,16 @@ namespace SharedAppFlowModule.Editor
             return page;
         }
 
-        private static Slider CreateVolumeSlider(string name, Transform parent, Vector2 position, Font font)
+        private static Slider CreateVolumeSlider(
+            string name,
+            string localizationKey,
+            Transform parent,
+            Vector2 position,
+            Font font)
         {
-            CreateText(name + " Label", parent, new Vector2(-105f, position.y), new Vector2(115f, 30f),
-                name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+            Text label = CreateText(name + " Label", parent, new Vector2(-105f, position.y),
+                new Vector2(115f, 30f), name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+            ConfigureLocalizedText(label, localizationKey);
 
             GameObject sliderObject = CreateUiObject(name + " Slider", parent);
             RectTransform sliderRect = sliderObject.GetComponent<RectTransform>();
@@ -505,10 +685,16 @@ namespace SharedAppFlowModule.Editor
             return slider;
         }
 
-        private static Toggle CreateSettingsToggle(string name, Transform parent, Vector2 position, Font font)
+        private static Toggle CreateSettingsToggle(
+            string name,
+            string localizationKey,
+            Transform parent,
+            Vector2 position,
+            Font font)
         {
-            CreateText(name + " Label", parent, new Vector2(-105f, position.y), new Vector2(115f, 30f),
-                name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+            Text label = CreateText(name + " Label", parent, new Vector2(-105f, position.y),
+                new Vector2(115f, 30f), name.ToUpperInvariant(), 13, font, FontStyle.Bold);
+            ConfigureLocalizedText(label, localizationKey);
 
             GameObject toggleObject = CreateUiObject(name + " Toggle", parent);
             RectTransform toggleRect = toggleObject.GetComponent<RectTransform>();
@@ -544,7 +730,8 @@ namespace SharedAppFlowModule.Editor
             SharedAppScreenId target,
             Font font,
             bool addFlowButton = true,
-            SharedButtonVariant variant = SharedButtonVariant.Secondary)
+            SharedButtonVariant variant = SharedButtonVariant.Secondary,
+            string localizationKey = null)
         {
             GameObject buttonObject = CreateUiObject(name, parent);
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
@@ -562,9 +749,26 @@ namespace SharedAppFlowModule.Editor
                 flowButton.Configure(controller, action, target);
             }
 
-            CreateText("Label", buttonObject.transform, Vector2.zero, size, label, 15, font, FontStyle.Bold);
+            Text buttonLabel = CreateText(
+                "Label", buttonObject.transform, Vector2.zero, size, label, 15, font, FontStyle.Bold);
+            if (!string.IsNullOrEmpty(localizationKey))
+            {
+                ConfigureLocalizedText(buttonLabel, localizationKey);
+            }
+
             visual.Configure(variant);
             return button;
+        }
+
+        private static void ConfigureLocalizedText(Text text, string entryKey)
+        {
+            if (text == null || string.IsNullOrWhiteSpace(entryKey))
+            {
+                return;
+            }
+
+            SharedLocalizedText localizedText = text.gameObject.AddComponent<SharedLocalizedText>();
+            localizedText.Configure(SharedUiTableName, entryKey);
         }
 
         private static Text CreateText(
@@ -647,6 +851,26 @@ namespace SharedAppFlowModule.Editor
             rect.localScale = Vector3.one;
         }
 
+        private static void AnchorBottomLeft(RectTransform rect, Vector2 size, Vector2 position)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            rect.sizeDelta = size;
+            rect.anchoredPosition = position;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void AnchorBottomRight(RectTransform rect, Vector2 size, Vector2 inset)
+        {
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(-inset.x, inset.y);
+            rect.localScale = Vector3.one;
+        }
+
         private static void ApplyPanelSprite(Image image, Sprite sprite, Color fallbackColor)
         {
             image.color = fallbackColor;
@@ -703,7 +927,146 @@ namespace SharedAppFlowModule.Editor
         {
             EnsureFolder(ModuleRoot);
             EnsureFolder(PrefabsFolder);
+            EnsureFolder(LocalizationFolder);
+            EnsureFolder(LocalesFolder);
+            EnsureFolder(TablesFolder);
             AssetDatabase.Refresh();
+        }
+
+        private static void EnsureLocalizationAssets()
+        {
+            LocalizationSettings settings = LocalizationEditorSettings.ActiveLocalizationSettings;
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance<LocalizationSettings>();
+                settings.name = "Shared Localization Settings";
+                AssetDatabase.CreateAsset(settings, LocalizationSettingsPath);
+                LocalizationEditorSettings.ActiveLocalizationSettings = settings;
+            }
+
+            Locale english = EnsureLocale("en", SystemLanguage.English, "English");
+            Locale korean = EnsureLocale("ko", SystemLanguage.Korean, "한국어");
+            if (LocalizationSettings.ProjectLocale == null)
+            {
+                LocalizationSettings.ProjectLocale = english;
+            }
+
+            StringTableCollection collection =
+                LocalizationEditorSettings.GetStringTableCollection(SharedUiTableName);
+            if (collection == null)
+            {
+                collection = LocalizationEditorSettings.CreateStringTableCollection(
+                    SharedUiTableName,
+                    TablesFolder,
+                    new List<Locale> { english, korean });
+            }
+
+            StringTable englishTable = EnsureStringTable(collection, english);
+            StringTable koreanTable = EnsureStringTable(collection, korean);
+
+            EnsureString(englishTable, "profile", "Profile");
+            EnsureSmartString(englishTable, "playing_as", "Playing as {0}");
+            EnsureString(englishTable, "login", "LOGIN");
+            EnsureString(englishTable, "login_subtitle", "Choose how you want to continue");
+            EnsureString(englishTable, "guest_login", "GUEST LOGIN");
+            EnsureString(englishTable, "play", "PLAY");
+            EnsureString(englishTable, "options", "OPTIONS");
+            EnsureString(englishTable, "quit", "QUIT");
+            EnsureString(englishTable, "collection", "COLLECTION");
+            EnsureString(englishTable, "gameplay", "GAMEPLAY");
+            EnsureString(englishTable, "back_to_home", "BACK TO HOME");
+            EnsureString(englishTable, "gameplay_subtitle", "Gameplay scene entry placeholder");
+            EnsureString(englishTable, "collection_subtitle", "Game-specific collection content goes here");
+            EnsureString(englishTable, "settings", "SETTINGS");
+            EnsureString(englishTable, "stats", "STATS");
+            EnsureString(englishTable, "credits", "CREDITS");
+            EnsureString(englishTable, "logout", "LOGOUT");
+            EnsureString(englishTable, "back", "BACK");
+            EnsureString(englishTable, "master_volume", "MASTER VOLUME");
+            EnsureString(englishTable, "music_volume", "MUSIC VOLUME");
+            EnsureString(englishTable, "sound_effects", "SOUND EFFECTS");
+            EnsureString(englishTable, "vibration", "VIBRATION");
+
+            EnsureString(koreanTable, "profile", "프로필");
+            EnsureSmartString(koreanTable, "playing_as", "{0} 플레이 중");
+            EnsureString(koreanTable, "login", "로그인");
+            EnsureString(koreanTable, "login_subtitle", "계속할 로그인 방식을 선택하세요");
+            EnsureString(koreanTable, "guest_login", "게스트 로그인");
+            EnsureString(koreanTable, "play", "플레이");
+            EnsureString(koreanTable, "options", "설정");
+            EnsureString(koreanTable, "quit", "종료");
+            EnsureString(koreanTable, "collection", "컬렉션");
+            EnsureString(koreanTable, "gameplay", "게임 플레이");
+            EnsureString(koreanTable, "back_to_home", "홈으로");
+            EnsureString(koreanTable, "gameplay_subtitle", "게임 플레이 화면이 연결되는 자리입니다");
+            EnsureString(koreanTable, "collection_subtitle", "게임별 컬렉션 화면이 연결되는 자리입니다");
+            EnsureString(koreanTable, "settings", "환경 설정");
+            EnsureString(koreanTable, "stats", "통계");
+            EnsureString(koreanTable, "credits", "제작진");
+            EnsureString(koreanTable, "logout", "로그아웃");
+            EnsureString(koreanTable, "back", "뒤로");
+            EnsureString(koreanTable, "master_volume", "전체 음량");
+            EnsureString(koreanTable, "music_volume", "음악 음량");
+            EnsureString(koreanTable, "sound_effects", "효과음");
+            EnsureString(koreanTable, "vibration", "진동");
+
+            EditorUtility.SetDirty(settings);
+            EditorUtility.SetDirty(collection);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static Locale EnsureLocale(string code, SystemLanguage language, string displayName)
+        {
+            Locale locale = LocalizationEditorSettings.GetLocale(code);
+            if (locale == null)
+            {
+                locale = Locale.CreateLocale(language);
+                locale.name = displayName + " (" + code + ")";
+                locale.LocaleName = displayName;
+                AssetDatabase.CreateAsset(locale, LocalesFolder + "/" + locale.name + ".asset");
+                LocalizationEditorSettings.AddLocale(locale);
+            }
+
+            return locale;
+        }
+
+        private static StringTable EnsureStringTable(StringTableCollection collection, Locale locale)
+        {
+            StringTable table = collection.GetTable(locale.Identifier) as StringTable;
+            if (table == null)
+            {
+                table = collection.AddNewTable(locale.Identifier, TablesFolder) as StringTable;
+            }
+
+            return table;
+        }
+
+        private static void EnsureString(StringTable table, string key, string value)
+        {
+            if (table == null)
+            {
+                return;
+            }
+
+            StringTableEntry entry = table.GetEntry(key);
+            if (entry == null)
+            {
+                table.AddEntry(key, value);
+                EditorUtility.SetDirty(table.SharedData);
+            }
+
+            EditorUtility.SetDirty(table);
+        }
+
+        private static void EnsureSmartString(StringTable table, string key, string value)
+        {
+            EnsureString(table, key, value);
+            StringTableEntry entry = table != null ? table.GetEntry(key) : null;
+            if (entry != null && !entry.IsSmart)
+            {
+                entry.IsSmart = true;
+                EditorUtility.SetDirty(table);
+            }
         }
 
         private static void EnsureFolder(string folder)

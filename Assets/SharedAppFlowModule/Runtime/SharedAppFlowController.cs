@@ -89,6 +89,11 @@ namespace SharedAppFlowModule
             ShowScreen(SharedAppScreenId.Gameplay);
         }
 
+        public void ShowCollection()
+        {
+            ShowScreen(SharedAppScreenId.Collection);
+        }
+
         public void ShowScreen(SharedAppScreenId screenId)
         {
             ShowScreen(screenId, false);
@@ -143,6 +148,15 @@ namespace SharedAppFlowModule
             {
                 settingsModal.Toggle();
             }
+        }
+
+        public void QuitApplication()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
 
         public void LoginAsGuest()
@@ -229,6 +243,7 @@ namespace SharedAppFlowModule
 
         public void Logout()
         {
+            CloseSettings();
             SharedAuthManager auth = ResolveAuthManager();
 
             if (auth != null)

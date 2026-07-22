@@ -7,13 +7,15 @@
   "dependencies": {
     "com.sharedmodules.core-module": "1.0.0",
     "com.unity.ugui": "2.0.0",
-    "com.unity.inputsystem": "1.11.2"
+    "com.unity.inputsystem": "1.11.2",
+    "com.unity.localization": "1.5.9"
   },
   "keywords": [
     "settings",
     "authentication",
     "app-flow",
-    "game-center"
+    "game-center",
+    "localization"
   ],
   "author": {
     "name": "Shared Modules"

@@ -8,7 +8,7 @@ Reusable Unity UI flow for simple mobile app/game starts:
 - Gameplay entry screen
 - Settings modal
 
-Use `Tools > Shared Modules > App Flow > Setup Intro Login Home Demo` to create a demo canvas in the current scene and save `Prefabs/Shared App Flow Root.prefab`.
+Use `Tools > Shared Modules > App Flow > Setup Intro Login Home Gameplay Demo` to create a demo canvas in the current scene and save `Prefabs/Shared App Flow Root.prefab`.
 
 The generated UI uses a `960 x 540` reference resolution and regular `Image`, `Button`, `Text`, and `RectTransform` objects so it can be edited visually in Unity.
 
@@ -20,7 +20,38 @@ Guest login works immediately. Android uses `SharedGooglePlayGamesLoginProvider`
 
 `SharedLoginProvider` is the SDK boundary. To enable real Google Play Games authentication, replace the placeholder component with an SDK-backed implementation and return `SharedLoginResult.Succeeded(playerId, displayName)` only after the platform login succeeds.
 
-Home and Gameplay are separate panels in the generated demo. The Gameplay panel is an entry placeholder; a production game can replace that transition with scene loading without changing the authentication flow.
+Home, Collection, and Gameplay are separate panels in the generated demo. The Gameplay and Collection panels are entry placeholders; a production game can replace those transitions with scene loading or game-specific UI without changing the authentication flow.
+
+## Customizing the home screen
+
+The generated Home panel follows a full-screen game-art layout with a profile card and a compact bottom navigation dock. The artwork is intentionally black by default. The dock contains `PLAY`, `OPTIONS`, `QUIT`, and `COLLECTION`. A separate compact language selector sits at the bottom-right and opens its available Locale list upward.
+
+Each generated Home panel has a `SharedHomeView` component. A game can replace its artwork and profile copy at runtime without changing the shared generator:
+
+```csharp
+using SharedAppFlowModule;
+using UnityEngine;
+
+public sealed class GameHomeTheme : MonoBehaviour
+{
+    [SerializeField] private SharedHomeView homeView;
+    [SerializeField] private Sprite homeArtwork;
+
+    private void Start()
+    {
+        homeView.SetArtwork(homeArtwork);
+        homeView.SetProfile("P1", "Player Name");
+    }
+}
+```
+
+Calling `ClearArtwork()` restores the black placeholder. When Home opens, the default profile name is refreshed from the saved shared login automatically. After a game calls `SetProfile`, that explicit value is kept; call `UseSavedProfile()` to return to the automatic login name.
+
+## Localization
+
+The setup tool creates English (`en`) and Korean (`ko`) Locales plus a `Shared UI` String Table under `Assets/SharedModules/Generated/Localization`. The selected Locale is saved and restored by `SharedLanguageSelector`. Shared menu labels update through `SharedLocalizedText` when the Locale changes.
+
+Games can add more Locales through Unity Localization and provide the corresponding `Shared UI` entries. Game-specific strings should remain in separate String Table Collections owned by the game project.
 
 ## Reusing the button design in game scenes
 

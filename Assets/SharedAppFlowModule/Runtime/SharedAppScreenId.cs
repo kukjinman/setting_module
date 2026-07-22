@@ -5,6 +5,7 @@ namespace SharedAppFlowModule
         Intro,
         Login,
         Home,
-        Gameplay
+        Gameplay,
+        Collection
     }
 }

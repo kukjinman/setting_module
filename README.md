@@ -98,7 +98,7 @@ Assets/SharedModules/Generated/Prefabs/Shared Core Root.prefab
 Tools > Shared Modules > App Flow > Setup Intro Login Home Gameplay Demo
 ```
 
-Intro, Login, Home, Gameplay 자리 표시자, Settings UI와 필요한 `EventSystem`이 생성됩니다. App Flow 프리팹은 다음 경로에 저장됩니다.
+Intro, Login, Home, Gameplay/Collection 자리 표시자, Settings UI와 필요한 `EventSystem`이 생성됩니다. App Flow 프리팹은 다음 경로에 저장됩니다.
 
 ```text
 Assets/SharedModules/Generated/Prefabs/Shared App Flow Root.prefab
@@ -162,11 +162,32 @@ public sealed class GameSceneLoader : MonoBehaviour
 Intro -> Login -> Guest 또는 플랫폼 로그인 -> Home -> PLAY -> GameScene
 ```
 
-저장된 Guest 또는 플랫폼 로그인이 있으면 Intro에서 로그인 복원을 확인한 후 Home으로 바로 이동할 수 있습니다. 로그인 화면을 다시 확인하려면 Home의 `LOGOUT` 버튼을 사용합니다.
+저장된 Guest 또는 플랫폼 로그인이 있으면 Intro에서 로그인 복원을 확인한 후 Home으로 바로 이동할 수 있습니다. 로그아웃은 `OPTIONS > LOGOUT`에서 실행할 수 있습니다.
 
-Home 왼쪽 상단의 플랫폼 아이콘 버튼은 현재 플랫폼 로그인을 실행합니다. iOS에서는 `GC`로 표시되어 Apple Game Center를 호출하고, Android에서는 `PG`로 표시되어 Google Play Games 로그인 공급자를 호출합니다. Android 공급자는 SDK가 연결되기 전까지 placeholder로 동작합니다.
+Home은 전체 화면 게임 이미지와 하단 메뉴 구조로 생성됩니다. 게임 이미지는 기본적으로 검정색이며, 왼쪽 아래에는 로그인 이름을 반영하는 Profile 카드가, 그 옆에는 `PLAY`, `OPTIONS`, `QUIT`, `COLLECTION` 버튼이 모여 있습니다. 현재 언어를 표시하는 언어 버튼은 Balatro 스타일로 오른쪽 아래에 따로 배치됩니다.
 
-이 버튼은 Home 화면에 들어왔을 때 표시되고 5초 후 자동으로 사라집니다. Home 화면의 아무 곳이나 터치하거나 클릭하면 다시 나타나며, 마지막 입력으로부터 5초 후 다시 사라집니다. 시간 정지 상태에서도 동작하도록 unscaled time을 사용합니다.
+Home의 `SharedHomeView`를 이용하면 게임별 이미지를 런타임에 교체할 수 있습니다.
+
+```csharp
+using SharedAppFlowModule;
+using UnityEngine;
+
+public sealed class GameHomeTheme : MonoBehaviour
+{
+    [SerializeField] private SharedHomeView homeView;
+    [SerializeField] private Sprite homeArtwork;
+
+    private void Start()
+    {
+        homeView.SetArtwork(homeArtwork);
+        homeView.SetProfile("P1", "Player Name");
+    }
+}
+```
+
+`ClearArtwork()`를 호출하면 다시 검정 자리 표시자로 돌아갑니다. `COLLECTION`은 게임별 컬렉션을 붙일 수 있는 자리 표시자 화면으로 이동하고, `QUIT`은 빌드된 앱을 종료합니다.
+
+언어 버튼을 누르면 지원 Locale 목록이 버튼 위에 열립니다. 기본으로 English(`en`)와 한국어(`ko`) Locale 및 `Shared UI` String Table이 생성되고, 선택한 Locale 코드는 `PlayerPrefs`에 저장됩니다. 각 게임은 Unity Localization 설정에 Locale을 추가하고 같은 `Shared UI` 키의 번역을 채우거나 별도의 게임 전용 String Table을 추가할 수 있습니다.
 
 Home의 공용 메뉴 버튼은 `OPTIONS`로 표시됩니다. Balatro 스타일의 간단한 중앙 메뉴가 열리며 다음 화면으로 이동할 수 있습니다.
 
@@ -179,6 +200,7 @@ OPTIONS
 |  `- VIBRATION
 |- STATS
 |- CREDITS
+|- LOGOUT
 `- BACK
 ```
 
@@ -227,7 +249,7 @@ SharedCoreRoot.Instance.Haptics.Play(SharedHapticType.Error);     // 실패
 
 iOS는 `UISelectionFeedbackGenerator`, `UIImpactFeedbackGenerator`, `UINotificationFeedbackGenerator`를 타입에 맞게 사용합니다. Android는 시스템 `performHapticFeedback` 상수를 사용하며 Android 11(API 30) 이상에서는 Success와 Error를 각각 `CONFIRM`, `REJECT`로 구분합니다. 구형 Android에서는 지원되는 Click 또는 Long Press 피드백으로 대체됩니다. Android의 시스템 햅틱 설정과 기기별 하드웨어 특성을 따르며 Unity Editor에서는 아무 동작도 하지 않습니다.
 
-패키지를 업데이트하기 전에 이미 App Flow 프리팹을 생성했다면 새 버튼이 기존 로컬 프리팹에 자동 추가되지 않습니다. 커스텀 UI 수정 사항을 보관한 후 Setup을 다시 실행하여 프리팹을 재생성하거나, 기존 Home Panel에 `SharedAppFlowButton`을 직접 추가하고 Action을 `LoginWithPlatform`으로 설정합니다.
+패키지를 업데이트하기 전에 이미 App Flow 프리팹을 생성했다면 새 홈 레이아웃이 기존 로컬 프리팹에 자동 반영되지 않습니다. 커스텀 UI 수정 사항을 보관한 후 Setup을 다시 실행하여 프리팹을 재생성합니다.
 
 ### Setup, 패키지 프리팹, 생성된 프리팹의 관계
 

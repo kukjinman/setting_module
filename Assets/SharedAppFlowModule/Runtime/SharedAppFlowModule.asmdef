@@ -4,6 +4,7 @@
   "references": [
     "SharedCoreModule",
     "Unity.InputSystem",
+    "Unity.Localization",
     "Unity.ugui"
   ],
   "includePlatforms": [],

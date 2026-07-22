@@ -4,6 +4,8 @@
   "references": [
     "SharedAppFlowModule",
     "SharedCoreModule",
+    "Unity.Localization",
+    "Unity.Localization.Editor",
     "Unity.ugui"
   ],
   "includePlatforms": [

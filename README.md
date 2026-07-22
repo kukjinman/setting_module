@@ -7,16 +7,18 @@ Reusable Unity package containing shared core services and an intro/login/home/s
 In Unity, open **Window > Package Manager**, press **+**, select **Add package from git URL**, and enter:
 
 ```text
-https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#main
-https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#main
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#v1.0.0
+https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#v1.0.0
 ```
 
 Alternatively, add the dependency to the game's `Packages/manifest.json`:
 
 ```json
-"com.sharedmodules.core-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#main",
-"com.sharedmodules.setting-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#main"
+"com.sharedmodules.core-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedCoreModule#v1.0.0",
+"com.sharedmodules.setting-module": "https://github.com/kukjinman/setting_module.git?path=/Assets/SharedAppFlowModule#v1.0.0"
 ```
+
+The current repository version is stored in [`VERSION`](VERSION). Release changes are recorded in [`CHANGELOG.md`](CHANGELOG.md), and the release process is documented in [`VERSIONING.md`](VERSIONING.md). Production games should use an immutable tag; use `main` only for development verification.
 
 For local development, use:
 

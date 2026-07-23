@@ -236,7 +236,7 @@ namespace SharedAppFlowModule.Editor
 
             GameObject profileObject = CreateUiObject("Profile", contentObject.transform);
             RectTransform profileRect = profileObject.GetComponent<RectTransform>();
-            AnchorBottomLeft(profileRect, new Vector2(128f, 82f), new Vector2(24f, 18f));
+            AnchorBottomLeft(profileRect, new Vector2(128f, 82f), new Vector2(24f, 58f));
             Image profileBackground = profileObject.AddComponent<Image>();
             profileBackground.color = new Color(0.09f, 0.14f, 0.15f, 0.96f);
             profileBackground.raycastTarget = false;
@@ -262,7 +262,7 @@ namespace SharedAppFlowModule.Editor
 
             GameObject dockObject = CreateUiObject("Bottom Navigation", contentObject.transform);
             RectTransform dockRect = dockObject.GetComponent<RectTransform>();
-            AnchorBottomLeft(dockRect, new Vector2(666f, 68f), new Vector2(170f, 18f));
+            AnchorBottomLeft(dockRect, new Vector2(540f, 82f), new Vector2(180f, 58f));
             Image dockBackground = dockObject.AddComponent<Image>();
             dockBackground.color = new Color(0.05f, 0.1f, 0.11f, 0.96f);
             dockBackground.raycastTarget = false;
@@ -271,7 +271,7 @@ namespace SharedAppFlowModule.Editor
             dockOutline.effectDistance = new Vector2(2f, -2f);
 
             Button playButton = CreateButton(
-                "Play Button", dockObject.transform, new Vector2(-249f, 0f), new Vector2(150f, 46f),
+                "Play Button", dockObject.transform, new Vector2(-171f, 0f), new Vector2(150f, 48f),
                 "PLAY", controller, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Gameplay, font,
                 variant: SharedButtonVariant.Primary,
                 localizationKey: "play");
@@ -282,7 +282,7 @@ namespace SharedAppFlowModule.Editor
                 Color.white);
 
             Button optionsButton = CreateButton(
-                "Options Button", dockObject.transform, new Vector2(-105f, 0f), new Vector2(122f, 46f),
+                "Options Button", dockObject.transform, new Vector2(20f, 0f), new Vector2(130f, 48f),
                 "OPTIONS", controller, SharedAppFlowButtonAction.OpenSettings, SharedAppScreenId.Home, font,
                 localizationKey: "options");
             optionsButton.GetComponent<SharedButtonVisual>().Configure(
@@ -292,7 +292,7 @@ namespace SharedAppFlowModule.Editor
                 Color.white);
 
             Button quitButton = CreateButton(
-                "Quit Button", dockObject.transform, new Vector2(19f, 0f), new Vector2(106f, 46f),
+                "Quit Button", dockObject.transform, new Vector2(191f, 0f), new Vector2(110f, 48f),
                 "QUIT", controller, SharedAppFlowButtonAction.Quit, SharedAppScreenId.Home, font,
                 variant: SharedButtonVariant.Destructive,
                 localizationKey: "quit");
@@ -303,14 +303,19 @@ namespace SharedAppFlowModule.Editor
                 Color.white);
 
             Button collectionButton = CreateButton(
-                "Collection Button", dockObject.transform, new Vector2(181f, 0f), new Vector2(170f, 46f),
-                "COLLECTION", controller, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Collection, font,
-                localizationKey: "collection");
+                "Collection Button", contentObject.transform, Vector2.zero, new Vector2(52f, 52f),
+                "\u25a6", controller, SharedAppFlowButtonAction.ShowScreen, SharedAppScreenId.Collection, font);
+            AnchorBottomRight(
+                collectionButton.GetComponent<RectTransform>(),
+                new Vector2(52f, 52f),
+                new Vector2(46f, 120f));
             collectionButton.GetComponent<SharedButtonVisual>().Configure(
                 SharedButtonVariant.Secondary,
                 new Color(0.12f, 0.51f, 0.32f, 1f),
                 new Color(0.28f, 0.82f, 0.52f, 1f),
                 Color.white);
+            Text collectionLabel = collectionButton.transform.Find("Label").GetComponent<Text>();
+            collectionLabel.fontSize = 28;
 
             Button languageButton = CreateButton(
                 "Language Button", contentObject.transform, Vector2.zero, new Vector2(96f, 46f),
@@ -319,7 +324,7 @@ namespace SharedAppFlowModule.Editor
             AnchorBottomRight(
                 languageButton.GetComponent<RectTransform>(),
                 new Vector2(96f, 46f),
-                new Vector2(24f, 29f));
+                new Vector2(24f, 58f));
             languageButton.GetComponent<SharedButtonVisual>().Configure(
                 SharedButtonVariant.Navigation,
                 new Color(0.15f, 0.2f, 0.21f, 1f),
@@ -330,7 +335,7 @@ namespace SharedAppFlowModule.Editor
 
             GameObject languagePopup = CreateUiObject("Language Popup", contentObject.transform);
             RectTransform popupRect = languagePopup.GetComponent<RectTransform>();
-            AnchorBottomRight(popupRect, new Vector2(160f, 10f), new Vector2(24f, 84f));
+            AnchorBottomRight(popupRect, new Vector2(160f, 10f), new Vector2(24f, 188f));
             Image popupBackground = languagePopup.AddComponent<Image>();
             popupBackground.color = new Color(0.05f, 0.1f, 0.11f, 0.98f);
             Outline popupOutline = languagePopup.AddComponent<Outline>();

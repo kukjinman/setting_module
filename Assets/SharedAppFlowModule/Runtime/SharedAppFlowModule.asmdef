@@ -5,6 +5,7 @@
     "SharedCoreModule",
     "Unity.InputSystem",
     "Unity.Localization",
+    "Unity.ResourceManager",
     "Unity.ugui"
   ],
   "includePlatforms": [],
